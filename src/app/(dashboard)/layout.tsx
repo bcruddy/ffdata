@@ -1,6 +1,14 @@
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+	const { userId } = await auth();
+
+	if (!userId) {
+		redirect('/sign-in');
+	}
+
 	return (
 		<div className="min-h-screen bg-background">
 			<Header />
