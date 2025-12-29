@@ -54,16 +54,17 @@ python espn_import.py
 
 The script imports:
 
-| Data | Description |
-|------|-------------|
-| League | Name and ESPN ID |
-| Seasons | All available years |
-| Owners | Extracted from team ownership data |
-| Teams | Name, W-L-T record, points for/against, final standing |
+| Data    | Description                                            |
+| ------- | ------------------------------------------------------ |
+| League  | Name and ESPN ID                                       |
+| Seasons | All available years                                    |
+| Owners  | Extracted from team ownership data                     |
+| Teams   | Name, W-L-T record, points for/against, final standing |
 
 ## Re-running the Import
 
 The script uses upserts, so you can safely re-run it to:
+
 - Update data after the season ends
 - Refresh if owner names change
 - Add new seasons
@@ -73,14 +74,17 @@ Existing data will be updated, not duplicated.
 ## Troubleshooting
 
 ### "No seasons found"
+
 - Check your `ESPN_LEAGUE_ID` is correct
 - Verify your cookies are fresh (ESPN cookies expire)
 - Make sure you're logged into the account that has access to this league
 
 ### "Error: espn-api package not installed"
+
 ```bash
 pip install espn-api
 ```
 
 ### Cookie expiration
+
 ESPN cookies typically last a few weeks. If you get auth errors, grab fresh cookies from your browser.
