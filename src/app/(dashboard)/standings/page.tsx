@@ -1,20 +1,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StandingsTable } from '@/components/standings/standings-table';
+import { getAggregateStandings } from '@/lib/db/queries/standings';
 
-export default function StandingsPage() {
+export default async function StandingsPage() {
+	const standings = await getAggregateStandings();
+
 	return (
 		<div className="space-y-8">
 			<div>
-				<h1 className="text-3xl font-bold tracking-tight">Standings</h1>
-				<p className="text-muted-foreground">View historical standings by season</p>
+				<h1 className="text-3xl font-bold tracking-tight">All-Time Standings</h1>
+				<p className="text-muted-foreground">Aggregate stats across all seasons</p>
 			</div>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Season Standings</CardTitle>
-					<CardDescription>Select a season to view standings</CardDescription>
+					<CardTitle>Owner Rankings</CardTitle>
+					<CardDescription>Click any column header to sort</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<p className="text-muted-foreground">No data yet. Import data from ESPN to get started.</p>
+					<StandingsTable data={standings} />
 				</CardContent>
 			</Card>
 		</div>
