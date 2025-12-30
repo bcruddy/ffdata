@@ -100,11 +100,14 @@ export function StandingsFilters({
 				</Select>
 			</div>
 
-			{hasFilters && (
-				<Button variant="ghost" size="sm" onClick={handleReset}>
-					Reset
-				</Button>
-			)}
+			<Button
+				variant="ghost"
+				size="sm"
+				onClick={handleReset}
+				className={hasFilters ? '' : 'invisible'}
+			>
+				Reset
+			</Button>
 		</div>
 	);
 }

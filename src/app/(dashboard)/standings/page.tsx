@@ -81,7 +81,11 @@ export default async function StandingsPage({ searchParams }: PageProps) {
 					<CardDescription>Click any column header to sort</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<StandingsTable data={displayData} view={filters.view} />
+					<StandingsTable
+						data={displayData}
+						view={filters.view}
+						hasFilters={!!(filters.startYear || filters.endYear)}
+					/>
 				</CardContent>
 			</Card>
 		</div>

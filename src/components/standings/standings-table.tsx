@@ -21,6 +21,7 @@ type SortDirection = 'asc' | 'desc';
 interface StandingsTableProps {
 	data: OwnerWithStats[];
 	view?: 'aggregate' | 'average';
+	hasFilters?: boolean;
 }
 
 interface SortIconProps {
@@ -89,7 +90,7 @@ function SortableHeader({ field, currentField, direction, onSort, children, clas
 	);
 }
 
-export function StandingsTable({ data, view = 'aggregate' }: StandingsTableProps) {
+export function StandingsTable({ data, view = 'aggregate', hasFilters = false }: StandingsTableProps) {
 	const isAverage = view === 'average';
 	const [sortField, setSortField] = useState<SortField>('totalWins');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -153,7 +154,10 @@ export function StandingsTable({ data, view = 'aggregate' }: StandingsTableProps
 	}, [data, sortField, sortDirection]);
 
 	if (data.length === 0) {
-		return <p className="text-muted-foreground py-8 text-center">No standings data available.</p>;
+		const message = hasFilters
+			? 'No standings data found for the selected year range.'
+			: 'No standings data available.';
+		return <p className="text-muted-foreground py-8 text-center">{message}</p>;
 	}
 
 	return (
