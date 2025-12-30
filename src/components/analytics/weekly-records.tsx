@@ -59,22 +59,73 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 				</div>
 			</CardHeader>
 			<CardContent>
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-12 text-center">#</TableHead>
-							<TableHead>Owner</TableHead>
-							<TableHead className="text-right">Score</TableHead>
-							<TableHead className="hidden text-center sm:table-cell">Result</TableHead>
-							<TableHead className="hidden text-center md:table-cell">Opponent</TableHead>
-							<TableHead className="hidden text-center lg:table-cell">Week</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{data.map((record, index) => (
-							<TableRow key={`${record.ownerId}-${record.year}-${record.week}`}>
-								<TableCell className="text-muted-foreground text-center font-medium">
-									{index + 1}
+				<div className="hidden sm:block">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead className="w-12 text-center">#</TableHead>
+								<TableHead>Owner</TableHead>
+								<TableHead className="text-right">Score</TableHead>
+								<TableHead className="text-center">Result</TableHead>
+								<TableHead className="hidden text-center md:table-cell">Opponent</TableHead>
+								<TableHead className="hidden text-center lg:table-cell">Week</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{data.map((record, index) => (
+								<TableRow key={`${record.ownerId}-${record.year}-${record.week}`}>
+									<TableCell className="text-muted-foreground text-center font-medium">
+										{index + 1}
+										{index < 3 && (
+											<span className="ml-1">
+												{index === 0 && (viewMode === 'high' ? '🥇' : '💩')}
+												{index === 1 && (viewMode === 'high' ? '🥈' : '💀')}
+												{index === 2 && (viewMode === 'high' ? '🥉' : '😬')}
+											</span>
+										)}
+									</TableCell>
+									<TableCell className="font-medium">{record.ownerName}</TableCell>
+									<TableCell
+										className={cn(
+											'text-right font-mono font-bold',
+											viewMode === 'high' ? 'text-green-500' : 'text-red-500',
+										)}
+									>
+										{record.score.toFixed(1)}
+									</TableCell>
+									<TableCell className="text-center">
+										{record.isWin ? <span className="text-green-500">W</span> : <span className="text-red-500">L</span>}
+									</TableCell>
+									<TableCell className="hidden text-center md:table-cell">
+										<span className="text-muted-foreground">
+											{record.opponentName} ({record.opponentScore.toFixed(1)})
+										</span>
+									</TableCell>
+									<TableCell className="hidden text-center lg:table-cell">
+										<span className="text-muted-foreground font-mono text-xs">
+											{record.year} W{record.week}
+										</span>
+										{record.isPlayoff && (
+											<span className="ml-1 text-xs" title="Playoff game">
+												🏆
+											</span>
+										)}
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</div>
+
+				<div className="sm:hidden space-y-3">
+					{data.map((record, index) => (
+						<div
+							key={`${record.ownerId}-${record.year}-${record.week}`}
+							className="bg-muted/50 rounded-lg p-3 space-y-2"
+						>
+							<div className="flex justify-between items-center">
+								<span className="text-muted-foreground text-sm">
+									#{index + 1}
 									{index < 3 && (
 										<span className="ml-1">
 											{index === 0 && (viewMode === 'high' ? '🥇' : '💩')}
@@ -82,38 +133,29 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 											{index === 2 && (viewMode === 'high' ? '🥉' : '😬')}
 										</span>
 									)}
-								</TableCell>
-								<TableCell className="font-medium">{record.ownerName}</TableCell>
-								<TableCell
-									className={cn(
-										'text-right font-mono font-bold',
-										viewMode === 'high' ? 'text-green-500' : 'text-red-500',
-									)}
-								>
+								</span>
+								<span className="text-muted-foreground text-xs">
+									{record.year} W{record.week}
+									{record.isPlayoff && ' 🏆'}
+								</span>
+							</div>
+							<div className="flex justify-between items-center">
+								<span className="font-medium">{record.ownerName}</span>
+								<span className={cn('font-mono font-bold', viewMode === 'high' ? 'text-green-500' : 'text-red-500')}>
 									{record.score.toFixed(1)}
-								</TableCell>
-								<TableCell className="hidden text-center sm:table-cell">
+								</span>
+							</div>
+							<div className="flex justify-between items-center text-muted-foreground text-sm">
+								<span>
+									vs {record.opponentName} ({record.opponentScore.toFixed(1)})
+								</span>
+								<span>
 									{record.isWin ? <span className="text-green-500">W</span> : <span className="text-red-500">L</span>}
-								</TableCell>
-								<TableCell className="hidden text-center md:table-cell">
-									<span className="text-muted-foreground">
-										{record.opponentName} ({record.opponentScore.toFixed(1)})
-									</span>
-								</TableCell>
-								<TableCell className="hidden text-center lg:table-cell">
-									<span className="text-muted-foreground font-mono text-xs">
-										{record.year} W{record.week}
-									</span>
-									{record.isPlayoff && (
-										<span className="ml-1 text-xs" title="Playoff game">
-											🏆
-										</span>
-									)}
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
+								</span>
+							</div>
+						</div>
+					))}
+				</div>
 			</CardContent>
 		</Card>
 	);
