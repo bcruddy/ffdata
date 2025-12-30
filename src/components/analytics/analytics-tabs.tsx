@@ -71,7 +71,8 @@ export function AnalyticsTabs({
 	const handleTabChange = (value: string) => {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set('tab', value);
-		router.push(`/analytics?${params.toString()}`);
+		// Use replace instead of push to avoid polluting browser history
+		router.replace(`/analytics?${params.toString()}`, { scroll: false });
 	};
 
 	return (
@@ -85,19 +86,19 @@ export function AnalyticsTabs({
 				))}
 			</TabsList>
 
-			<TabsContent value="hall-of-fame" className="mt-6">
+			<TabsContent value="hall-of-fame" className="mt-6 animate-in fade-in-50 duration-200">
 				<HallOfFame championships={championships} sackos={sackos} ownerStats={ownerStats} />
 			</TabsContent>
 
-			<TabsContent value="head-to-head" className="mt-6">
+			<TabsContent value="head-to-head" className="mt-6 animate-in fade-in-50 duration-200">
 				<H2HMatrix records={h2hRecords} />
 			</TabsContent>
 
-			<TabsContent value="records" className="mt-6">
+			<TabsContent value="records" className="mt-6 animate-in fade-in-50 duration-200">
 				<MatchupRecords blowouts={blowouts} closeGames={closeGames} />
 			</TabsContent>
 
-			<TabsContent value="weekly-scores" className="mt-6">
+			<TabsContent value="weekly-scores" className="mt-6 animate-in fade-in-50 duration-200">
 				<WeeklyRecords highScores={highScores} lowScores={lowScores} />
 			</TabsContent>
 
@@ -107,7 +108,7 @@ export function AnalyticsTabs({
 			</TabsContent>
 			*/}
 
-			<TabsContent value="rivalry" className="mt-6">
+			<TabsContent value="rivalry" className="mt-6 animate-in fade-in-50 duration-200">
 				<RivalryView owners={owners} initialStats={initialRivalryStats} fetchRivalry={fetchRivalry} />
 			</TabsContent>
 		</Tabs>
