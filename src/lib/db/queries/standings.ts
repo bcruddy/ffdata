@@ -16,7 +16,14 @@ interface StandingsRow {
 	championships: string;
 }
 
-export async function getAggregateStandings(): Promise<OwnerWithStats[]> {
+interface StandingsQueryParams {
+	startYear?: number;
+	endYear?: number;
+}
+
+export async function getAggregateStandings(params: StandingsQueryParams = {}): Promise<OwnerWithStats[]> {
+	const { startYear, endYear } = params;
+
 	const rows = (await sql`
     SELECT
       o.id,
@@ -33,7 +40,11 @@ export async function getAggregateStandings(): Promise<OwnerWithStats[]> {
       COUNT(CASE WHEN t.final_standing = 1 THEN 1 END) as championships
     FROM owners o
     LEFT JOIN teams t ON t.owner_id = o.id
+    LEFT JOIN seasons s ON t.season_id = s.id
+    WHERE (${startYear}::int IS NULL OR s.year >= ${startYear})
+      AND (${endYear}::int IS NULL OR s.year <= ${endYear})
     GROUP BY o.id, o.name, o.league_id, o.created_at, o.updated_at
+    HAVING COUNT(t.id) > 0
     ORDER BY total_wins DESC
   `) as StandingsRow[];
 
