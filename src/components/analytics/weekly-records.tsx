@@ -25,7 +25,7 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>Weekly Score Records</CardTitle>
-					<CardDescription>Highest and lowest weekly scores</CardDescription>
+					<CardDescription>Highest and lowest weekly scores (2020+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground py-8 text-center">
@@ -44,8 +44,8 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 						<CardTitle>{viewMode === 'high' ? 'Highest Weekly Scores' : 'Lowest Weekly Scores'}</CardTitle>
 						<CardDescription>
 							{viewMode === 'high'
-								? 'Best single-week performances in league history'
-								: 'Worst single-week performances (hall of shame)'}
+								? 'Best single-week performances in league history (2020+)'
+								: 'Worst single-week performances (hall of shame) (2020+)'}
 						</CardDescription>
 					</div>
 					<div className="flex items-center gap-2">
