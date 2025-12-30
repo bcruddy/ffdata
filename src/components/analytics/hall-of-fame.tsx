@@ -46,13 +46,7 @@ export function HallOfFame({ championships, sackos, ownerStats }: HallOfFameProp
 	);
 }
 
-function TimelineView({
-	championships,
-	sackos,
-}: {
-	championships: ChampionshipRecord[];
-	sackos: SackoRecord[];
-}) {
+function TimelineView({ championships, sackos }: { championships: ChampionshipRecord[]; sackos: SackoRecord[] }) {
 	const years = useMemo(() => {
 		const allYears = new Set([...championships.map((c) => c.year), ...sackos.map((s) => s.year)]);
 		return Array.from(allYears).sort((a, b) => b - a);

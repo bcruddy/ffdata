@@ -93,10 +93,7 @@ export function MatchupRecords({ blowouts, closeGames }: MatchupRecordsProps) {
 								</TableCell>
 								<TableCell className="font-medium">
 									{matchup.winnerOwnerName}
-									<span className="text-muted-foreground sm:hidden">
-										{' '}
-										vs {matchup.loserOwnerName}
-									</span>
+									<span className="text-muted-foreground sm:hidden"> vs {matchup.loserOwnerName}</span>
 								</TableCell>
 								<TableCell className="hidden sm:table-cell">{matchup.loserOwnerName}</TableCell>
 								<TableCell className="text-center font-mono">

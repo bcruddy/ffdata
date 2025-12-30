@@ -139,7 +139,9 @@ function StreaksTable({ records }: { records: StreakRecord[] }) {
 							</TableHeader>
 							<TableBody>
 								{winningStreaks.slice(0, 10).map((streak) => (
-									<TableRow key={`${streak.ownerId}-${streak.startYear}-${streak.startWeek}`}>
+									<TableRow
+										key={`${streak.ownerId}-${streak.startYear}-${streak.startWeek}-${streak.endYear}-${streak.endWeek}`}
+									>
 										<TableCell className="font-medium">
 											{streak.ownerName}
 											{streak.isActive && (
@@ -148,9 +150,7 @@ function StreaksTable({ records }: { records: StreakRecord[] }) {
 												</span>
 											)}
 										</TableCell>
-										<TableCell className="text-center font-mono font-bold text-green-500">
-											{streak.length}W
-										</TableCell>
+										<TableCell className="text-center font-mono font-bold text-green-500">{streak.length}W</TableCell>
 										<TableCell className="text-muted-foreground hidden text-center text-xs sm:table-cell">
 											{streak.startYear === streak.endYear ? (
 												<span>
@@ -192,7 +192,9 @@ function StreaksTable({ records }: { records: StreakRecord[] }) {
 							</TableHeader>
 							<TableBody>
 								{losingStreaks.slice(0, 10).map((streak) => (
-									<TableRow key={`${streak.ownerId}-${streak.startYear}-${streak.startWeek}`}>
+									<TableRow
+										key={`${streak.ownerId}-${streak.startYear}-${streak.startWeek}-${streak.endYear}-${streak.endWeek}`}
+									>
 										<TableCell className="font-medium">
 											{streak.ownerName}
 											{streak.isActive && (
@@ -201,9 +203,7 @@ function StreaksTable({ records }: { records: StreakRecord[] }) {
 												</span>
 											)}
 										</TableCell>
-										<TableCell className="text-center font-mono font-bold text-red-500">
-											{streak.length}L
-										</TableCell>
+										<TableCell className="text-center font-mono font-bold text-red-500">{streak.length}L</TableCell>
 										<TableCell className="text-muted-foreground hidden text-center text-xs sm:table-cell">
 											{streak.startYear === streak.endYear ? (
 												<span>

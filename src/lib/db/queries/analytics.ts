@@ -272,6 +272,7 @@ export async function getHeadToHeadRecords(): Promise<H2HRecord[]> {
       SELECT
         m.id,
         m.season_id,
+        s.year,
         m.week,
         home_t.owner_id as home_owner_id,
         away_t.owner_id as away_owner_id,
@@ -283,6 +284,7 @@ export async function getHeadToHeadRecords(): Promise<H2HRecord[]> {
           ELSE NULL
         END as winner_owner_id
       FROM matchups m
+      JOIN seasons s ON m.season_id = s.id
       JOIN teams home_t ON m.home_team_id = home_t.id
       JOIN teams away_t ON m.away_team_id = away_t.id
     ),
@@ -297,6 +299,7 @@ export async function getHeadToHeadRecords(): Promise<H2HRecord[]> {
         SUM(mr.home_score) as points_for,
         SUM(mr.away_score) as points_against
       FROM matchup_results mr
+      WHERE mr.year >= 2020
       GROUP BY mr.home_owner_id, mr.away_owner_id
       UNION ALL
       SELECT
@@ -309,6 +312,7 @@ export async function getHeadToHeadRecords(): Promise<H2HRecord[]> {
         SUM(mr.away_score) as points_for,
         SUM(mr.home_score) as points_against
       FROM matchup_results mr
+      WHERE mr.year >= 2020
       GROUP BY mr.away_owner_id, mr.home_owner_id
     )
     SELECT
@@ -381,7 +385,7 @@ export async function getBiggestBlowouts(limit = 25): Promise<MatchupRecord[]> {
       JOIN teams away_t ON m.away_team_id = away_t.id
       JOIN owners home_o ON home_t.owner_id = home_o.id
       JOIN owners away_o ON away_t.owner_id = away_o.id
-      WHERE m.home_score != m.away_score
+      WHERE m.home_score != m.away_score AND s.year >= 2020
     )
     SELECT * FROM matchup_details
     ORDER BY margin DESC
@@ -426,7 +430,7 @@ export async function getClosestGames(limit = 25): Promise<MatchupRecord[]> {
       JOIN teams away_t ON m.away_team_id = away_t.id
       JOIN owners home_o ON home_t.owner_id = home_o.id
       JOIN owners away_o ON away_t.owner_id = away_o.id
-      WHERE m.home_score != m.away_score
+      WHERE m.home_score != m.away_score AND s.year >= 2020
     )
     SELECT * FROM matchup_details
     ORDER BY margin ASC
@@ -480,6 +484,7 @@ export async function getHighestWeeklyScores(limit = 25): Promise<WeeklyScoreRec
     JOIN owners o ON t.owner_id = o.id
     JOIN teams opp_t ON m.away_team_id = opp_t.id
     JOIN owners opp ON opp_t.owner_id = opp.id
+    WHERE s.year >= 2020
     UNION ALL
     SELECT
       o.name as owner_name,
@@ -497,6 +502,7 @@ export async function getHighestWeeklyScores(limit = 25): Promise<WeeklyScoreRec
     JOIN owners o ON t.owner_id = o.id
     JOIN teams opp_t ON m.home_team_id = opp_t.id
     JOIN owners opp ON opp_t.owner_id = opp.id
+    WHERE s.year >= 2020
     ORDER BY score DESC
     LIMIT ${limit}
   `) as WeeklyScoreRow[];
@@ -532,6 +538,7 @@ export async function getLowestWeeklyScores(limit = 25): Promise<WeeklyScoreReco
     JOIN owners o ON t.owner_id = o.id
     JOIN teams opp_t ON m.away_team_id = opp_t.id
     JOIN owners opp ON opp_t.owner_id = opp.id
+    WHERE s.year >= 2020
     UNION ALL
     SELECT
       o.name as owner_name,
@@ -549,6 +556,7 @@ export async function getLowestWeeklyScores(limit = 25): Promise<WeeklyScoreReco
     JOIN owners o ON t.owner_id = o.id
     JOIN teams opp_t ON m.home_team_id = opp_t.id
     JOIN owners opp ON opp_t.owner_id = opp.id
+    WHERE s.year >= 2020
     ORDER BY score ASC
     LIMIT ${limit}
   `) as WeeklyScoreRow[];
@@ -584,6 +592,8 @@ export async function getLuckAnalysis(): Promise<LuckRecord[]> {
         m.week,
         AVG(m.home_score + m.away_score) / 2 as avg_score
       FROM matchups m
+      JOIN seasons s ON m.season_id = s.id
+      WHERE s.year >= 2020
       GROUP BY m.season_id, m.week
     ),
     owner_results AS (
@@ -604,9 +614,11 @@ export async function getLuckAnalysis(): Promise<LuckRecord[]> {
           ELSE 0
         END as unlucky_loss
       FROM matchups m
+      JOIN seasons s ON m.season_id = s.id
       JOIN teams t ON m.home_team_id = t.id
       JOIN owners o ON t.owner_id = o.id
       JOIN weekly_averages wa ON wa.season_id = m.season_id AND wa.week = m.week
+      WHERE s.year >= 2020
       UNION ALL
       SELECT
         o.id as owner_id,
@@ -625,9 +637,11 @@ export async function getLuckAnalysis(): Promise<LuckRecord[]> {
           ELSE 0
         END as unlucky_loss
       FROM matchups m
+      JOIN seasons s ON m.season_id = s.id
       JOIN teams t ON m.away_team_id = t.id
       JOIN owners o ON t.owner_id = o.id
       JOIN weekly_averages wa ON wa.season_id = m.season_id AND wa.week = m.week
+      WHERE s.year >= 2020
     )
     SELECT
       owner_id,
@@ -687,6 +701,7 @@ export async function getLongestStreaks(limit = 20): Promise<StreakRecord[]> {
       JOIN teams t ON m.home_team_id = t.id
       JOIN owners o ON t.owner_id = o.id
       JOIN seasons s ON m.season_id = s.id
+      WHERE s.year >= 2020
       UNION ALL
       SELECT
         o.id as owner_id,
@@ -703,6 +718,7 @@ export async function getLongestStreaks(limit = 20): Promise<StreakRecord[]> {
       JOIN teams t ON m.away_team_id = t.id
       JOIN owners o ON t.owner_id = o.id
       JOIN seasons s ON m.season_id = s.id
+      WHERE s.year >= 2020
     ),
     streak_groups AS (
       SELECT
@@ -796,10 +812,12 @@ export async function getRivalryStats(owner1Id: string, owner2Id: string): Promi
         CASE WHEN home_t.owner_id = ${owner1Id} THEN m.home_score ELSE m.away_score END as owner1_score,
         CASE WHEN home_t.owner_id = ${owner1Id} THEN m.away_score ELSE m.home_score END as owner2_score
       FROM matchups m
+      JOIN seasons s ON m.season_id = s.id
       JOIN teams home_t ON m.home_team_id = home_t.id
       JOIN teams away_t ON m.away_team_id = away_t.id
-      WHERE (home_t.owner_id = ${owner1Id} AND away_t.owner_id = ${owner2Id})
-         OR (home_t.owner_id = ${owner2Id} AND away_t.owner_id = ${owner1Id})
+      WHERE s.year >= 2020
+        AND ((home_t.owner_id = ${owner1Id} AND away_t.owner_id = ${owner2Id})
+         OR (home_t.owner_id = ${owner2Id} AND away_t.owner_id = ${owner1Id}))
     )
     SELECT
       ${owner1Id} as owner1_id,

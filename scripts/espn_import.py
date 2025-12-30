@@ -151,6 +151,22 @@ def get_team_id_by_espn_id(cursor, season_id: str, espn_team_id: str) -> str | N
     return result[0] if result else None
 
 
+def get_espn_team_id(team) -> str | None:
+    """Extract ESPN team ID from team object or integer.
+
+    The espn_api library has inconsistent behavior across seasons:
+    - Newer seasons: returns Team objects with .team_id attribute
+    - Older seasons (2019 and earlier): may return integers directly
+    """
+    if team is None:
+        return None
+    if isinstance(team, int):
+        return str(team)
+    if hasattr(team, 'team_id'):
+        return str(team.team_id)
+    return None
+
+
 def get_owner_name(team) -> str:
     """Extract owner name from ESPN team object."""
     # The espn-api library exposes owner info differently depending on version
@@ -211,8 +227,15 @@ def import_matchups(cursor, season_id: str, espn_league, year: int) -> int:
             if home_team is None or away_team is None:
                 continue
 
-            home_team_id = get_team_id_by_espn_id(cursor, season_id, str(home_team.team_id))
-            away_team_id = get_team_id_by_espn_id(cursor, season_id, str(away_team.team_id))
+            # Extract ESPN team IDs (handles both Team objects and raw integers)
+            espn_home_id = get_espn_team_id(home_team)
+            espn_away_id = get_espn_team_id(away_team)
+
+            if not espn_home_id or not espn_away_id:
+                continue
+
+            home_team_id = get_team_id_by_espn_id(cursor, season_id, espn_home_id)
+            away_team_id = get_team_id_by_espn_id(cursor, season_id, espn_away_id)
 
             if not home_team_id or not away_team_id:
                 print(f"    Warning: Could not find team IDs for week {week} matchup")

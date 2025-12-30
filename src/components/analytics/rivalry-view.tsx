@@ -118,7 +118,11 @@ function RivalryStatsCard({ stats }: { stats: RivalryStats }) {
 	const owner2WinPct = stats.totalGames > 0 ? stats.owner2Wins / stats.totalGames : 0;
 
 	const leader =
-		stats.owner1Wins > stats.owner2Wins ? stats.owner1Name : stats.owner2Wins > stats.owner1Wins ? stats.owner2Name : null;
+		stats.owner1Wins > stats.owner2Wins
+			? stats.owner1Name
+			: stats.owner2Wins > stats.owner1Wins
+				? stats.owner2Name
+				: null;
 
 	return (
 		<Card>
@@ -128,11 +132,7 @@ function RivalryStatsCard({ stats }: { stats: RivalryStats }) {
 				</CardTitle>
 				<CardDescription>
 					{stats.totalGames} game{stats.totalGames !== 1 ? 's' : ''} played
-					{leader && (
-						<span className="ml-2 text-green-500">
-							({leader} leads)
-						</span>
-					)}
+					{leader && <span className="ml-2 text-green-500">({leader} leads)</span>}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -172,10 +172,7 @@ function RivalryStatsCard({ stats }: { stats: RivalryStats }) {
 						<div className="mt-4">
 							{/* Win percentage bar */}
 							<div className="bg-muted h-4 w-48 overflow-hidden rounded-full">
-								<div
-									className="h-full bg-green-500 transition-all"
-									style={{ width: `${owner1WinPct * 100}%` }}
-								/>
+								<div className="h-full bg-green-500 transition-all" style={{ width: `${owner1WinPct * 100}%` }} />
 							</div>
 						</div>
 					</div>
@@ -209,15 +206,7 @@ function RivalryStatsCard({ stats }: { stats: RivalryStats }) {
 	);
 }
 
-function StatRow({
-	label,
-	value,
-	highlight = false,
-}: {
-	label: string;
-	value: string | number;
-	highlight?: boolean;
-}) {
+function StatRow({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) {
 	return (
 		<div className="flex justify-between">
 			<span className="text-muted-foreground">{label}</span>

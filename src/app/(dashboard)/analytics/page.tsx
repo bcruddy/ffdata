@@ -65,6 +65,11 @@ export default async function AnalyticsPage() {
 			<div>
 				<h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
 				<p className="text-muted-foreground">Deep dive into league history and stats</p>
+				{hasMatchupData && (
+					<p className="text-muted-foreground mt-2 text-sm">
+						Note: Weekly matchup data is available from 2020 onwards.
+					</p>
+				)}
 			</div>
 
 			<Suspense fallback={<div className="text-muted-foreground py-8 text-center">Loading analytics...</div>}>

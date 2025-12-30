@@ -41,9 +41,7 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 			<CardHeader>
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<CardTitle>
-							{viewMode === 'high' ? 'Highest Weekly Scores' : 'Lowest Weekly Scores'}
-						</CardTitle>
+						<CardTitle>{viewMode === 'high' ? 'Highest Weekly Scores' : 'Lowest Weekly Scores'}</CardTitle>
 						<CardDescription>
 							{viewMode === 'high'
 								? 'Best single-week performances in league history'
@@ -51,18 +49,10 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 						</CardDescription>
 					</div>
 					<div className="flex items-center gap-2">
-						<Button
-							variant={viewMode === 'high' ? 'default' : 'outline'}
-							size="sm"
-							onClick={() => setViewMode('high')}
-						>
+						<Button variant={viewMode === 'high' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('high')}>
 							High Scores
 						</Button>
-						<Button
-							variant={viewMode === 'low' ? 'default' : 'outline'}
-							size="sm"
-							onClick={() => setViewMode('low')}
-						>
+						<Button variant={viewMode === 'low' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('low')}>
 							Low Scores
 						</Button>
 					</div>
@@ -103,11 +93,7 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 									{record.score.toFixed(1)}
 								</TableCell>
 								<TableCell className="hidden text-center sm:table-cell">
-									{record.isWin ? (
-										<span className="text-green-500">W</span>
-									) : (
-										<span className="text-red-500">L</span>
-									)}
+									{record.isWin ? <span className="text-green-500">W</span> : <span className="text-red-500">L</span>}
 								</TableCell>
 								<TableCell className="hidden text-center md:table-cell">
 									<span className="text-muted-foreground">
