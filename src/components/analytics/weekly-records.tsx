@@ -121,7 +121,10 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 				{/* Mobile: Card stack view */}
 				<div className="sm:hidden space-y-3">
 					{data.map((record, index) => (
-						<div key={`${record.ownerId}-${record.year}-${record.week}`} className="bg-muted/50 rounded-lg p-3 space-y-2">
+						<div
+							key={`${record.ownerId}-${record.year}-${record.week}`}
+							className="bg-muted/50 rounded-lg p-3 space-y-2"
+						>
 							<div className="flex justify-between items-center">
 								<span className="text-muted-foreground text-sm">
 									#{index + 1}
@@ -140,9 +143,7 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="font-medium">{record.ownerName}</span>
-								<span
-									className={cn('font-mono font-bold', viewMode === 'high' ? 'text-green-500' : 'text-red-500')}
-								>
+								<span className={cn('font-mono font-bold', viewMode === 'high' ? 'text-green-500' : 'text-red-500')}>
 									{record.score.toFixed(1)}
 								</span>
 							</div>
@@ -150,7 +151,9 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 								<span>
 									vs {record.opponentName} ({record.opponentScore.toFixed(1)})
 								</span>
-								<span>{record.isWin ? <span className="text-green-500">W</span> : <span className="text-red-500">L</span>}</span>
+								<span>
+									{record.isWin ? <span className="text-green-500">W</span> : <span className="text-red-500">L</span>}
+								</span>
 							</div>
 						</div>
 					))}
