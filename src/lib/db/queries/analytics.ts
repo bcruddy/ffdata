@@ -43,6 +43,48 @@ export interface WeeklyScoreRecord {
 	isPlayoff: boolean;
 }
 
+// Luck analysis record
+export interface LuckRecord {
+	ownerId: string;
+	ownerName: string;
+	totalWins: number;
+	totalLosses: number;
+	luckyWins: number;
+	unluckyLosses: number;
+	netLuck: number;
+}
+
+// Streak record
+export interface StreakRecord {
+	ownerId: string;
+	ownerName: string;
+	streakType: 'winning' | 'losing';
+	length: number;
+	startYear: number;
+	startWeek: number;
+	endYear: number;
+	endWeek: number;
+	isActive: boolean;
+}
+
+// Rivalry comparison
+export interface RivalryStats {
+	owner1Id: string;
+	owner1Name: string;
+	owner2Id: string;
+	owner2Name: string;
+	owner1Wins: number;
+	owner2Wins: number;
+	ties: number;
+	totalGames: number;
+	owner1PointsFor: number;
+	owner2PointsFor: number;
+	owner1AvgScore: number;
+	owner2AvgScore: number;
+	biggestOwner1Win: number;
+	biggestOwner2Win: number;
+}
+
 // Championship record by year
 export interface ChampionshipRecord {
 	year: number;
@@ -522,4 +564,281 @@ export async function getLowestWeeklyScores(limit = 25): Promise<WeeklyScoreReco
 		isWin: row.is_win,
 		isPlayoff: row.is_playoff,
 	}));
+}
+
+// Luck analysis row types
+interface LuckRow {
+	owner_id: string;
+	owner_name: string;
+	total_wins: string;
+	total_losses: string;
+	lucky_wins: string;
+	unlucky_losses: string;
+}
+
+export async function getLuckAnalysis(): Promise<LuckRecord[]> {
+	const rows = (await sql`
+    WITH weekly_averages AS (
+      SELECT
+        m.season_id,
+        m.week,
+        AVG(m.home_score + m.away_score) / 2 as avg_score
+      FROM matchups m
+      GROUP BY m.season_id, m.week
+    ),
+    owner_results AS (
+      SELECT
+        o.id as owner_id,
+        o.name as owner_name,
+        m.home_score as score,
+        m.away_score as opp_score,
+        wa.avg_score,
+        CASE WHEN m.home_score > m.away_score THEN 1 ELSE 0 END as is_win,
+        CASE WHEN m.home_score < m.away_score THEN 1 ELSE 0 END as is_loss,
+        CASE
+          WHEN m.home_score > m.away_score AND m.away_score > wa.avg_score THEN 1
+          ELSE 0
+        END as lucky_win,
+        CASE
+          WHEN m.home_score < m.away_score AND m.home_score > wa.avg_score THEN 1
+          ELSE 0
+        END as unlucky_loss
+      FROM matchups m
+      JOIN teams t ON m.home_team_id = t.id
+      JOIN owners o ON t.owner_id = o.id
+      JOIN weekly_averages wa ON wa.season_id = m.season_id AND wa.week = m.week
+      UNION ALL
+      SELECT
+        o.id as owner_id,
+        o.name as owner_name,
+        m.away_score as score,
+        m.home_score as opp_score,
+        wa.avg_score,
+        CASE WHEN m.away_score > m.home_score THEN 1 ELSE 0 END as is_win,
+        CASE WHEN m.away_score < m.home_score THEN 1 ELSE 0 END as is_loss,
+        CASE
+          WHEN m.away_score > m.home_score AND m.home_score > wa.avg_score THEN 1
+          ELSE 0
+        END as lucky_win,
+        CASE
+          WHEN m.away_score < m.home_score AND m.away_score > wa.avg_score THEN 1
+          ELSE 0
+        END as unlucky_loss
+      FROM matchups m
+      JOIN teams t ON m.away_team_id = t.id
+      JOIN owners o ON t.owner_id = o.id
+      JOIN weekly_averages wa ON wa.season_id = m.season_id AND wa.week = m.week
+    )
+    SELECT
+      owner_id,
+      owner_name,
+      SUM(is_win) as total_wins,
+      SUM(is_loss) as total_losses,
+      SUM(lucky_win) as lucky_wins,
+      SUM(unlucky_loss) as unlucky_losses
+    FROM owner_results
+    GROUP BY owner_id, owner_name
+    ORDER BY (SUM(lucky_win) - SUM(unlucky_loss)) DESC
+  `) as LuckRow[];
+
+	return rows.map((row) => {
+		const luckyWins = parseInt(row.lucky_wins) || 0;
+		const unluckyLosses = parseInt(row.unlucky_losses) || 0;
+		return {
+			ownerId: row.owner_id,
+			ownerName: row.owner_name,
+			totalWins: parseInt(row.total_wins) || 0,
+			totalLosses: parseInt(row.total_losses) || 0,
+			luckyWins,
+			unluckyLosses,
+			netLuck: luckyWins - unluckyLosses,
+		};
+	});
+}
+
+// Streak row types
+interface StreakRow {
+	owner_id: string;
+	owner_name: string;
+	streak_type: string;
+	length: string;
+	start_year: string;
+	start_week: string;
+	end_year: string;
+	end_week: string;
+	is_active: boolean;
+}
+
+export async function getLongestStreaks(limit = 20): Promise<StreakRecord[]> {
+	const rows = (await sql`
+    WITH ordered_games AS (
+      SELECT
+        o.id as owner_id,
+        o.name as owner_name,
+        s.year,
+        m.week,
+        CASE
+          WHEN m.home_score > m.away_score THEN 'W'
+          WHEN m.home_score < m.away_score THEN 'L'
+          ELSE 'T'
+        END as result,
+        ROW_NUMBER() OVER (PARTITION BY o.id ORDER BY s.year, m.week) as game_num
+      FROM matchups m
+      JOIN teams t ON m.home_team_id = t.id
+      JOIN owners o ON t.owner_id = o.id
+      JOIN seasons s ON m.season_id = s.id
+      UNION ALL
+      SELECT
+        o.id as owner_id,
+        o.name as owner_name,
+        s.year,
+        m.week,
+        CASE
+          WHEN m.away_score > m.home_score THEN 'W'
+          WHEN m.away_score < m.home_score THEN 'L'
+          ELSE 'T'
+        END as result,
+        ROW_NUMBER() OVER (PARTITION BY o.id ORDER BY s.year, m.week) as game_num
+      FROM matchups m
+      JOIN teams t ON m.away_team_id = t.id
+      JOIN owners o ON t.owner_id = o.id
+      JOIN seasons s ON m.season_id = s.id
+    ),
+    streak_groups AS (
+      SELECT
+        *,
+        game_num - ROW_NUMBER() OVER (PARTITION BY owner_id, result ORDER BY year, week) as streak_group
+      FROM ordered_games
+      WHERE result IN ('W', 'L')
+    ),
+    streaks AS (
+      SELECT
+        owner_id,
+        owner_name,
+        result as streak_type,
+        COUNT(*) as length,
+        MIN(year) as start_year,
+        MIN(week) as start_week,
+        MAX(year) as end_year,
+        MAX(week) as end_week
+      FROM streak_groups
+      GROUP BY owner_id, owner_name, result, streak_group
+      HAVING COUNT(*) >= 3
+    ),
+    latest_game AS (
+      SELECT owner_id, MAX(year * 100 + week) as latest
+      FROM ordered_games
+      GROUP BY owner_id
+    )
+    SELECT
+      s.owner_id,
+      s.owner_name,
+      s.streak_type,
+      s.length,
+      s.start_year,
+      s.start_week,
+      s.end_year,
+      s.end_week,
+      (s.end_year * 100 + s.end_week) = lg.latest as is_active
+    FROM streaks s
+    JOIN latest_game lg ON s.owner_id = lg.owner_id
+    ORDER BY s.length DESC
+    LIMIT ${limit}
+  `) as StreakRow[];
+
+	return rows.map((row) => ({
+		ownerId: row.owner_id,
+		ownerName: row.owner_name,
+		streakType: row.streak_type === 'W' ? 'winning' : 'losing',
+		length: parseInt(row.length),
+		startYear: parseInt(row.start_year),
+		startWeek: parseInt(row.start_week),
+		endYear: parseInt(row.end_year),
+		endWeek: parseInt(row.end_week),
+		isActive: row.is_active,
+	}));
+}
+
+// Get all owners for rivalry selector
+export async function getAllOwners(): Promise<{ id: string; name: string }[]> {
+	const rows = (await sql`
+    SELECT DISTINCT o.id, o.name
+    FROM owners o
+    JOIN teams t ON t.owner_id = o.id
+    ORDER BY o.name
+  `) as { id: string; name: string }[];
+
+	return rows;
+}
+
+// Rivalry stats row type
+interface RivalryRow {
+	owner1_id: string;
+	owner1_name: string;
+	owner2_id: string;
+	owner2_name: string;
+	owner1_wins: string;
+	owner2_wins: string;
+	ties: string;
+	total_games: string;
+	owner1_points_for: string;
+	owner2_points_for: string;
+	biggest_owner1_win: string;
+	biggest_owner2_win: string;
+}
+
+export async function getRivalryStats(owner1Id: string, owner2Id: string): Promise<RivalryStats | null> {
+	const rows = (await sql`
+    WITH matchup_results AS (
+      SELECT
+        CASE WHEN home_t.owner_id = ${owner1Id} THEN home_t.owner_id ELSE away_t.owner_id END as owner1_id,
+        CASE WHEN home_t.owner_id = ${owner1Id} THEN away_t.owner_id ELSE home_t.owner_id END as owner2_id,
+        CASE WHEN home_t.owner_id = ${owner1Id} THEN m.home_score ELSE m.away_score END as owner1_score,
+        CASE WHEN home_t.owner_id = ${owner1Id} THEN m.away_score ELSE m.home_score END as owner2_score
+      FROM matchups m
+      JOIN teams home_t ON m.home_team_id = home_t.id
+      JOIN teams away_t ON m.away_team_id = away_t.id
+      WHERE (home_t.owner_id = ${owner1Id} AND away_t.owner_id = ${owner2Id})
+         OR (home_t.owner_id = ${owner2Id} AND away_t.owner_id = ${owner1Id})
+    )
+    SELECT
+      ${owner1Id} as owner1_id,
+      o1.name as owner1_name,
+      ${owner2Id} as owner2_id,
+      o2.name as owner2_name,
+      SUM(CASE WHEN owner1_score > owner2_score THEN 1 ELSE 0 END) as owner1_wins,
+      SUM(CASE WHEN owner2_score > owner1_score THEN 1 ELSE 0 END) as owner2_wins,
+      SUM(CASE WHEN owner1_score = owner2_score THEN 1 ELSE 0 END) as ties,
+      COUNT(*) as total_games,
+      SUM(owner1_score) as owner1_points_for,
+      SUM(owner2_score) as owner2_points_for,
+      MAX(CASE WHEN owner1_score > owner2_score THEN owner1_score - owner2_score ELSE 0 END) as biggest_owner1_win,
+      MAX(CASE WHEN owner2_score > owner1_score THEN owner2_score - owner1_score ELSE 0 END) as biggest_owner2_win
+    FROM matchup_results mr
+    CROSS JOIN (SELECT name FROM owners WHERE id = ${owner1Id}) o1
+    CROSS JOIN (SELECT name FROM owners WHERE id = ${owner2Id}) o2
+    GROUP BY o1.name, o2.name
+  `) as RivalryRow[];
+
+	if (rows.length === 0) return null;
+
+	const row = rows[0];
+	const totalGames = parseInt(row.total_games) || 1;
+
+	return {
+		owner1Id: row.owner1_id,
+		owner1Name: row.owner1_name,
+		owner2Id: row.owner2_id,
+		owner2Name: row.owner2_name,
+		owner1Wins: parseInt(row.owner1_wins) || 0,
+		owner2Wins: parseInt(row.owner2_wins) || 0,
+		ties: parseInt(row.ties) || 0,
+		totalGames,
+		owner1PointsFor: parseFloat(row.owner1_points_for) || 0,
+		owner2PointsFor: parseFloat(row.owner2_points_for) || 0,
+		owner1AvgScore: (parseFloat(row.owner1_points_for) || 0) / totalGames,
+		owner2AvgScore: (parseFloat(row.owner2_points_for) || 0) / totalGames,
+		biggestOwner1Win: parseFloat(row.biggest_owner1_win) || 0,
+		biggestOwner2Win: parseFloat(row.biggest_owner2_win) || 0,
+	};
 }

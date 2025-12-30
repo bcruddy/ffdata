@@ -6,6 +6,8 @@ import { HallOfFame } from './hall-of-fame';
 import { H2HMatrix } from './h2h-matrix';
 import { MatchupRecords } from './matchup-records';
 import { WeeklyRecords } from './weekly-records';
+import { LuckStreaks } from './luck-streaks';
+import { RivalryView } from './rivalry-view';
 import type {
 	ChampionshipRecord,
 	SackoRecord,
@@ -13,6 +15,9 @@ import type {
 	H2HRecord,
 	MatchupRecord,
 	WeeklyScoreRecord,
+	LuckRecord,
+	StreakRecord,
+	RivalryStats,
 } from '@/lib/db/queries/analytics';
 
 interface AnalyticsTabsProps {
@@ -25,6 +30,11 @@ interface AnalyticsTabsProps {
 	closeGames: MatchupRecord[];
 	highScores: WeeklyScoreRecord[];
 	lowScores: WeeklyScoreRecord[];
+	luckRecords: LuckRecord[];
+	streakRecords: StreakRecord[];
+	owners: { id: string; name: string }[];
+	initialRivalryStats: RivalryStats | null;
+	fetchRivalry: (owner1Id: string, owner2Id: string) => Promise<RivalryStats | null>;
 }
 
 const TABS = [
@@ -48,6 +58,11 @@ export function AnalyticsTabs({
 	closeGames,
 	highScores,
 	lowScores,
+	luckRecords,
+	streakRecords,
+	owners,
+	initialRivalryStats,
+	fetchRivalry,
 }: AnalyticsTabsProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -87,27 +102,12 @@ export function AnalyticsTabs({
 			</TabsContent>
 
 			<TabsContent value="luck-streaks" className="mt-6">
-				<ComingSoon feature="Luck & Streaks Analysis" requiresImport={!hasMatchupData} />
+				<LuckStreaks luckRecords={luckRecords} streakRecords={streakRecords} />
 			</TabsContent>
 
 			<TabsContent value="rivalry" className="mt-6">
-				<ComingSoon feature="Rivalry Dashboard" requiresImport={!hasMatchupData} />
+				<RivalryView owners={owners} initialStats={initialRivalryStats} fetchRivalry={fetchRivalry} />
 			</TabsContent>
 		</Tabs>
-	);
-}
-
-function ComingSoon({ feature, requiresImport }: { feature: string; requiresImport: boolean }) {
-	return (
-		<div className="flex flex-col items-center justify-center py-16 text-center">
-			<p className="text-muted-foreground text-lg">{feature}</p>
-			{requiresImport ? (
-				<p className="text-muted-foreground mt-2 text-sm">
-					Run the ESPN import script with matchup data to enable this feature.
-				</p>
-			) : (
-				<p className="text-muted-foreground mt-2 text-sm">Coming soon...</p>
-			)}
-		</div>
 	);
 }

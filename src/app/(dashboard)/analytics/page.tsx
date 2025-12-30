@@ -9,6 +9,10 @@ import {
 	getClosestGames,
 	getHighestWeeklyScores,
 	getLowestWeeklyScores,
+	getLuckAnalysis,
+	getLongestStreaks,
+	getAllOwners,
+	getRivalryStats,
 } from '@/lib/db/queries/analytics';
 import { sql } from '@/lib/db/client';
 
@@ -33,15 +37,28 @@ export default async function AnalyticsPage() {
 	]);
 
 	// Fetch matchup-dependent data only if we have matchups
-	const [h2hRecords, blowouts, closeGames, highScores, lowScores] = hasMatchupData
+	const [h2hRecords, blowouts, closeGames, highScores, lowScores, luckRecords, streakRecords, owners] = hasMatchupData
 		? await Promise.all([
 				getHeadToHeadRecords(),
 				getBiggestBlowouts(25),
 				getClosestGames(25),
 				getHighestWeeklyScores(25),
 				getLowestWeeklyScores(25),
+				getLuckAnalysis(),
+				getLongestStreaks(20),
+				getAllOwners(),
 			])
-		: [[], [], [], [], []];
+		: [[], [], [], [], [], [], [], []];
+
+	// Get initial rivalry stats for first two owners
+	const initialRivalryStats =
+		hasMatchupData && owners.length >= 2 ? await getRivalryStats(owners[0].id, owners[1].id) : null;
+
+	// Server action for fetching rivalry stats
+	async function fetchRivalry(owner1Id: string, owner2Id: string) {
+		'use server';
+		return getRivalryStats(owner1Id, owner2Id);
+	}
 
 	return (
 		<div className="space-y-8">
@@ -61,6 +78,11 @@ export default async function AnalyticsPage() {
 					closeGames={closeGames}
 					highScores={highScores}
 					lowScores={lowScores}
+					luckRecords={luckRecords}
+					streakRecords={streakRecords}
+					owners={owners}
+					initialRivalryStats={initialRivalryStats}
+					fetchRivalry={fetchRivalry}
 				/>
 			</Suspense>
 		</div>
