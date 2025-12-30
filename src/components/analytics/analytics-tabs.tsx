@@ -42,7 +42,7 @@ const TABS = [
 	{ value: 'head-to-head', label: 'Head-to-Head', requiresMatchups: true },
 	{ value: 'records', label: 'Records', requiresMatchups: true },
 	{ value: 'weekly-scores', label: 'Weekly Scores', requiresMatchups: true },
-	{ value: 'luck-streaks', label: 'Luck & Streaks', requiresMatchups: true },
+	// { value: 'luck-streaks', label: 'Luck & Streaks', requiresMatchups: true }, // Hidden - see GitHub issue #6
 	{ value: 'rivalry', label: 'Rivalry', requiresMatchups: true },
 ] as const;
 
@@ -101,9 +101,11 @@ export function AnalyticsTabs({
 				<WeeklyRecords highScores={highScores} lowScores={lowScores} />
 			</TabsContent>
 
+			{/* Hidden - see GitHub issue #6
 			<TabsContent value="luck-streaks" className="mt-6">
 				<LuckStreaks luckRecords={luckRecords} streakRecords={streakRecords} />
 			</TabsContent>
+			*/}
 
 			<TabsContent value="rivalry" className="mt-6">
 				<RivalryView owners={owners} initialStats={initialRivalryStats} fetchRivalry={fetchRivalry} />
