@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -63,12 +64,12 @@ export function H2HMatrixSkeleton() {
 							<Skeleton key={i} className="h-6 w-full" />
 						))}
 						{Array.from({ length: 8 }).map((_, row) => (
-							<>
-								<Skeleton key={`label-${row}`} className="h-6 w-full" />
+							<Fragment key={row}>
+								<Skeleton className="h-6 w-full" />
 								{Array.from({ length: 8 }).map((_, col) => (
-									<Skeleton key={`${row}-${col}`} className="h-10 w-full" />
+									<Skeleton key={col} className="h-10 w-full" />
 								))}
-							</>
+							</Fragment>
 						))}
 					</div>
 				</div>

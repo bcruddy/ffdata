@@ -69,7 +69,8 @@ export function useRivalry(owner1Id: string, owner2Id: string) {
 	return useQuery<RivalryStats | null>({
 		queryKey: analyticsKeys.rivalry(owner1Id, owner2Id),
 		queryFn: async () => {
-			const res = await fetch(`/api/analytics/rivalry?owner1Id=${owner1Id}&owner2Id=${owner2Id}`);
+			const params = new URLSearchParams({ owner1Id, owner2Id });
+			const res = await fetch(`/api/analytics/rivalry?${params}`);
 			if (!res.ok) {
 				throw new Error('Failed to fetch rivalry data');
 			}
