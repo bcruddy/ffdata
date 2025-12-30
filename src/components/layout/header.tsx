@@ -6,7 +6,10 @@ import { UserButton } from '@clerk/nextjs';
 import { Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const navItems = [{ href: '/standings', label: 'Standings' }];
+const navItems = [
+	{ href: '/standings', label: 'Standings' },
+	{ href: '/analytics', label: 'Analytics' },
+];
 
 export function Header() {
 	const pathname = usePathname();
