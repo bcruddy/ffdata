@@ -1,6 +1,15 @@
 import { Suspense } from 'react';
 import { AnalyticsTabs } from '@/components/analytics/analytics-tabs';
-import { getChampionshipsByYear, getSackosByYear, getHallOfFameStats } from '@/lib/db/queries/analytics';
+import {
+	getChampionshipsByYear,
+	getSackosByYear,
+	getHallOfFameStats,
+	getHeadToHeadRecords,
+	getBiggestBlowouts,
+	getClosestGames,
+	getHighestWeeklyScores,
+	getLowestWeeklyScores,
+} from '@/lib/db/queries/analytics';
 import { sql } from '@/lib/db/client';
 
 async function checkMatchupData(): Promise<boolean> {
@@ -14,12 +23,25 @@ async function checkMatchupData(): Promise<boolean> {
 }
 
 export default async function AnalyticsPage() {
-	const [championships, sackos, ownerStats, hasMatchupData] = await Promise.all([
+	const hasMatchupData = await checkMatchupData();
+
+	// Fetch hall of fame data (always available)
+	const [championships, sackos, ownerStats] = await Promise.all([
 		getChampionshipsByYear(),
 		getSackosByYear(),
 		getHallOfFameStats(),
-		checkMatchupData(),
 	]);
+
+	// Fetch matchup-dependent data only if we have matchups
+	const [h2hRecords, blowouts, closeGames, highScores, lowScores] = hasMatchupData
+		? await Promise.all([
+				getHeadToHeadRecords(),
+				getBiggestBlowouts(25),
+				getClosestGames(25),
+				getHighestWeeklyScores(25),
+				getLowestWeeklyScores(25),
+			])
+		: [[], [], [], [], []];
 
 	return (
 		<div className="space-y-8">
@@ -34,6 +56,11 @@ export default async function AnalyticsPage() {
 					sackos={sackos}
 					ownerStats={ownerStats}
 					hasMatchupData={hasMatchupData}
+					h2hRecords={h2hRecords}
+					blowouts={blowouts}
+					closeGames={closeGames}
+					highScores={highScores}
+					lowScores={lowScores}
 				/>
 			</Suspense>
 		</div>

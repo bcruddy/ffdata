@@ -3,13 +3,28 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HallOfFame } from './hall-of-fame';
-import type { ChampionshipRecord, SackoRecord, OwnerHallOfFameStats } from '@/lib/db/queries/analytics';
+import { H2HMatrix } from './h2h-matrix';
+import { MatchupRecords } from './matchup-records';
+import { WeeklyRecords } from './weekly-records';
+import type {
+	ChampionshipRecord,
+	SackoRecord,
+	OwnerHallOfFameStats,
+	H2HRecord,
+	MatchupRecord,
+	WeeklyScoreRecord,
+} from '@/lib/db/queries/analytics';
 
 interface AnalyticsTabsProps {
 	championships: ChampionshipRecord[];
 	sackos: SackoRecord[];
 	ownerStats: OwnerHallOfFameStats[];
 	hasMatchupData: boolean;
+	h2hRecords: H2HRecord[];
+	blowouts: MatchupRecord[];
+	closeGames: MatchupRecord[];
+	highScores: WeeklyScoreRecord[];
+	lowScores: WeeklyScoreRecord[];
 }
 
 const TABS = [
@@ -23,7 +38,17 @@ const TABS = [
 
 type TabValue = (typeof TABS)[number]['value'];
 
-export function AnalyticsTabs({ championships, sackos, ownerStats, hasMatchupData }: AnalyticsTabsProps) {
+export function AnalyticsTabs({
+	championships,
+	sackos,
+	ownerStats,
+	hasMatchupData,
+	h2hRecords,
+	blowouts,
+	closeGames,
+	highScores,
+	lowScores,
+}: AnalyticsTabsProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const currentTab = (searchParams.get('tab') as TabValue) || 'hall-of-fame';
@@ -50,15 +75,15 @@ export function AnalyticsTabs({ championships, sackos, ownerStats, hasMatchupDat
 			</TabsContent>
 
 			<TabsContent value="head-to-head" className="mt-6">
-				<ComingSoon feature="Head-to-Head Matrix" requiresImport={!hasMatchupData} />
+				<H2HMatrix records={h2hRecords} />
 			</TabsContent>
 
 			<TabsContent value="records" className="mt-6">
-				<ComingSoon feature="Blowouts & Close Games" requiresImport={!hasMatchupData} />
+				<MatchupRecords blowouts={blowouts} closeGames={closeGames} />
 			</TabsContent>
 
 			<TabsContent value="weekly-scores" className="mt-6">
-				<ComingSoon feature="Weekly Score Leaderboards" requiresImport={!hasMatchupData} />
+				<WeeklyRecords highScores={highScores} lowScores={lowScores} />
 			</TabsContent>
 
 			<TabsContent value="luck-streaks" className="mt-6">
