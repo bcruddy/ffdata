@@ -1,42 +1,22 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useRivalry } from '@/lib/hooks/use-analytics';
 import type { RivalryStats } from '@/lib/db/queries/analytics';
 
 interface RivalryViewProps {
 	owners: { id: string; name: string }[];
-	initialStats: RivalryStats | null;
-	fetchRivalry: (owner1Id: string, owner2Id: string) => Promise<RivalryStats | null>;
 }
 
-export function RivalryView({ owners, initialStats, fetchRivalry }: RivalryViewProps) {
+export function RivalryView({ owners }: RivalryViewProps) {
 	const [owner1Id, setOwner1Id] = useState<string>(owners[0]?.id || '');
 	const [owner2Id, setOwner2Id] = useState<string>(owners[1]?.id || '');
-	const [stats, setStats] = useState<RivalryStats | null>(initialStats);
-	const [isPending, startTransition] = useTransition();
 
-	const handleOwner1Change = (id: string) => {
-		setOwner1Id(id);
-		if (id && owner2Id && id !== owner2Id) {
-			startTransition(async () => {
-				const result = await fetchRivalry(id, owner2Id);
-				setStats(result);
-			});
-		}
-	};
-
-	const handleOwner2Change = (id: string) => {
-		setOwner2Id(id);
-		if (owner1Id && id && owner1Id !== id) {
-			startTransition(async () => {
-				const result = await fetchRivalry(owner1Id, id);
-				setStats(result);
-			});
-		}
-	};
+	const { data: stats, isLoading, error } = useRivalry(owner1Id, owner2Id);
 
 	if (owners.length < 2) {
 		return (
@@ -63,7 +43,7 @@ export function RivalryView({ owners, initialStats, fetchRivalry }: RivalryViewP
 				</CardHeader>
 				<CardContent>
 					<div className="flex flex-col items-center gap-4 sm:flex-row">
-						<Select value={owner1Id} onValueChange={handleOwner1Change}>
+						<Select value={owner1Id} onValueChange={setOwner1Id}>
 							<SelectTrigger className="w-full sm:w-48">
 								<SelectValue placeholder="Select owner" />
 							</SelectTrigger>
@@ -78,7 +58,7 @@ export function RivalryView({ owners, initialStats, fetchRivalry }: RivalryViewP
 
 						<span className="text-muted-foreground text-xl font-bold">vs</span>
 
-						<Select value={owner2Id} onValueChange={handleOwner2Change}>
+						<Select value={owner2Id} onValueChange={setOwner2Id}>
 							<SelectTrigger className="w-full sm:w-48">
 								<SelectValue placeholder="Select owner" />
 							</SelectTrigger>
@@ -94,15 +74,19 @@ export function RivalryView({ owners, initialStats, fetchRivalry }: RivalryViewP
 				</CardContent>
 			</Card>
 
-			{isPending && (
-				<div className="text-muted-foreground py-8 text-center">
-					<span className="animate-pulse">Loading rivalry stats...</span>
-				</div>
+			{isLoading && <RivalryLoadingSkeleton />}
+
+			{error && (
+				<Card>
+					<CardContent className="py-8">
+						<p className="text-muted-foreground text-center">Failed to load rivalry stats. Please try again.</p>
+					</CardContent>
+				</Card>
 			)}
 
-			{!isPending && stats && <RivalryStatsCard stats={stats} />}
+			{!isLoading && !error && stats && <RivalryStatsCard stats={stats} />}
 
-			{!isPending && !stats && owner1Id && owner2Id && owner1Id !== owner2Id && (
+			{!isLoading && !error && !stats && owner1Id && owner2Id && owner1Id !== owner2Id && (
 				<Card>
 					<CardContent className="py-8">
 						<p className="text-muted-foreground text-center">These owners have never played each other.</p>
@@ -110,6 +94,43 @@ export function RivalryView({ owners, initialStats, fetchRivalry }: RivalryViewP
 				</Card>
 			)}
 		</div>
+	);
+}
+
+function RivalryLoadingSkeleton() {
+	return (
+		<Card>
+			<CardHeader className="text-center">
+				<Skeleton className="h-6 w-48 mx-auto" />
+				<Skeleton className="h-4 w-32 mx-auto mt-2" />
+			</CardHeader>
+			<CardContent>
+				<div className="grid gap-6 md:grid-cols-3">
+					<div className="space-y-3">
+						<Skeleton className="h-6 w-24 mx-auto" />
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} className="flex justify-between">
+								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-4 w-12" />
+							</div>
+						))}
+					</div>
+					<div className="flex flex-col items-center justify-center">
+						<Skeleton className="h-10 w-24" />
+						<Skeleton className="h-4 w-48 mt-4" />
+					</div>
+					<div className="space-y-3">
+						<Skeleton className="h-6 w-24 mx-auto" />
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} className="flex justify-between">
+								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-4 w-12" />
+							</div>
+						))}
+					</div>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
