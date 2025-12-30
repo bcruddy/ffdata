@@ -67,7 +67,6 @@ export function MatchupRecords({ blowouts, closeGames }: MatchupRecordsProps) {
 				</div>
 			</CardHeader>
 			<CardContent>
-				{/* Desktop: Table view */}
 				<div className="hidden sm:block">
 					<Table>
 						<TableHeader>
@@ -122,7 +121,6 @@ export function MatchupRecords({ blowouts, closeGames }: MatchupRecordsProps) {
 					</Table>
 				</div>
 
-				{/* Mobile: Card stack view */}
 				<div className="sm:hidden space-y-3">
 					{data.map((matchup, index) => (
 						<div key={matchup.matchupId} className="bg-muted/50 rounded-lg p-3 space-y-2">

@@ -96,14 +96,12 @@ export function AnalyticsTabs() {
 	const searchParams = useSearchParams();
 	const currentTab = (searchParams.get('tab') as TabValue) || 'hall-of-fame';
 
-	// Fetch matchups data to determine if matchup tabs should be enabled
 	const { data: matchupsData, isLoading: matchupsLoading } = useMatchups();
 	const hasMatchupData = matchupsData?.hasMatchupData ?? false;
 
 	const handleTabChange = (value: string) => {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set('tab', value);
-		// Use replace instead of push to avoid polluting browser history
 		router.replace(`/analytics?${params.toString()}`, { scroll: false });
 	};
 

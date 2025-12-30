@@ -9,11 +9,9 @@ import type {
 	RivalryStats,
 } from '@/lib/db/queries/analytics';
 
-// Cache configuration
-const STALE_TIME = 30 * 60 * 1000; // 30 minutes
-const GC_TIME = 60 * 60 * 1000; // 1 hour
+const STALE_TIME = 30 * 60 * 1000;
+const GC_TIME = 60 * 60 * 1000;
 
-// Query keys for cache management
 export const analyticsKeys = {
 	all: ['analytics'] as const,
 	hallOfFame: () => [...analyticsKeys.all, 'hall-of-fame'] as const,
@@ -21,7 +19,6 @@ export const analyticsKeys = {
 	rivalry: (owner1Id: string, owner2Id: string) => [...analyticsKeys.all, 'rivalry', owner1Id, owner2Id] as const,
 };
 
-// Types for API responses
 export interface HallOfFameData {
 	championships: ChampionshipRecord[];
 	sackos: SackoRecord[];
@@ -38,7 +35,6 @@ export interface MatchupsData {
 	owners: { id: string; name: string }[];
 }
 
-// Hall of Fame hook
 export function useHallOfFame() {
 	return useQuery<HallOfFameData>({
 		queryKey: analyticsKeys.hallOfFame(),
@@ -54,7 +50,6 @@ export function useHallOfFame() {
 	});
 }
 
-// Matchups hook (H2H, Records, Weekly Scores)
 export function useMatchups() {
 	return useQuery<MatchupsData>({
 		queryKey: analyticsKeys.matchups(),
@@ -70,7 +65,6 @@ export function useMatchups() {
 	});
 }
 
-// Rivalry hook
 export function useRivalry(owner1Id: string, owner2Id: string) {
 	return useQuery<RivalryStats | null>({
 		queryKey: analyticsKeys.rivalry(owner1Id, owner2Id),

@@ -59,7 +59,6 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 				</div>
 			</CardHeader>
 			<CardContent>
-				{/* Desktop: Table view */}
 				<div className="hidden sm:block">
 					<Table>
 						<TableHeader>
@@ -118,7 +117,6 @@ export function WeeklyRecords({ highScores, lowScores }: WeeklyRecordsProps) {
 					</Table>
 				</div>
 
-				{/* Mobile: Card stack view */}
 				<div className="sm:hidden space-y-3">
 					{data.map((record, index) => (
 						<div

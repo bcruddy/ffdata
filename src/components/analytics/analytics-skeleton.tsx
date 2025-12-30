@@ -15,13 +15,11 @@ export function TableSkeleton({ rows = 5, cols = 4 }: TableSkeletonProps) {
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-3">
-					{/* Header row */}
 					<div className="flex gap-4 pb-2 border-b">
 						{Array.from({ length: cols }).map((_, j) => (
 							<Skeleton key={j} className="h-4 flex-1" />
 						))}
 					</div>
-					{/* Data rows */}
 					{Array.from({ length: rows }).map((_, i) => (
 						<div key={i} className="flex gap-4">
 							{Array.from({ length: cols }).map((_, j) => (
@@ -38,12 +36,10 @@ export function TableSkeleton({ rows = 5, cols = 4 }: TableSkeletonProps) {
 export function HallOfFameSkeleton() {
 	return (
 		<div className="space-y-6">
-			{/* View toggle buttons */}
 			<div className="flex items-center gap-2">
 				<Skeleton className="h-9 w-24" />
 				<Skeleton className="h-9 w-28" />
 			</div>
-			{/* Two cards side by side */}
 			<div className="grid gap-6 md:grid-cols-2">
 				<TableSkeleton rows={8} cols={3} />
 				<TableSkeleton rows={8} cols={3} />
@@ -62,12 +58,10 @@ export function H2HMatrixSkeleton() {
 			<CardContent>
 				<div className="overflow-x-auto">
 					<div className="grid grid-cols-9 gap-2 min-w-[600px]">
-						{/* Header row */}
 						<div />
 						{Array.from({ length: 8 }).map((_, i) => (
 							<Skeleton key={i} className="h-6 w-full" />
 						))}
-						{/* Matrix rows */}
 						{Array.from({ length: 8 }).map((_, row) => (
 							<>
 								<Skeleton key={`label-${row}`} className="h-6 w-full" />
@@ -86,7 +80,6 @@ export function H2HMatrixSkeleton() {
 export function MatchupRecordsSkeleton() {
 	return (
 		<div className="space-y-6">
-			{/* Toggle buttons */}
 			<div className="flex items-center gap-2">
 				<Skeleton className="h-9 w-32" />
 				<Skeleton className="h-9 w-32" />
@@ -99,7 +92,6 @@ export function MatchupRecordsSkeleton() {
 export function WeeklyRecordsSkeleton() {
 	return (
 		<div className="space-y-6">
-			{/* Toggle buttons */}
 			<div className="flex items-center gap-2">
 				<Skeleton className="h-9 w-32" />
 				<Skeleton className="h-9 w-32" />
@@ -112,7 +104,6 @@ export function WeeklyRecordsSkeleton() {
 export function RivalrySkeleton() {
 	return (
 		<div className="space-y-6">
-			{/* Owner selectors */}
 			<div className="flex flex-wrap gap-4">
 				<div className="flex-1 min-w-[200px] space-y-2">
 					<Skeleton className="h-4 w-20" />
@@ -123,7 +114,6 @@ export function RivalrySkeleton() {
 					<Skeleton className="h-10 w-full" />
 				</div>
 			</div>
-			{/* Stats cards */}
 			<div className="grid gap-4 md:grid-cols-3">
 				{Array.from({ length: 3 }).map((_, i) => (
 					<Card key={i}>
