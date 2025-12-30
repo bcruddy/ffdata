@@ -118,6 +118,55 @@ def upsert_team(cursor, season_id: str, owner_id: str, espn_team_id: str,
     return cursor.fetchone()[0]
 
 
+def upsert_matchup(cursor, season_id: str, week: int,
+                   home_team_id: str, away_team_id: str,
+                   home_score: float, away_score: float,
+                   is_playoff: bool, is_championship: bool) -> str:
+    """Upsert matchup and return its UUID."""
+    cursor.execute(
+        """
+        INSERT INTO matchups (season_id, week, home_team_id, away_team_id, home_score, away_score, is_playoff, is_championship)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (season_id, week, home_team_id, away_team_id) DO UPDATE SET
+            home_score = EXCLUDED.home_score,
+            away_score = EXCLUDED.away_score,
+            is_playoff = EXCLUDED.is_playoff,
+            is_championship = EXCLUDED.is_championship
+        RETURNING id
+        """,
+        (season_id, week, home_team_id, away_team_id, home_score, away_score, is_playoff, is_championship)
+    )
+    return cursor.fetchone()[0]
+
+
+def get_team_id_by_espn_id(cursor, season_id: str, espn_team_id: str) -> str | None:
+    """Get team UUID by ESPN team ID within a season."""
+    cursor.execute(
+        """
+        SELECT id FROM teams WHERE season_id = %s AND espn_team_id = %s
+        """,
+        (season_id, espn_team_id)
+    )
+    result = cursor.fetchone()
+    return result[0] if result else None
+
+
+def get_espn_team_id(team) -> str | None:
+    """Extract ESPN team ID from team object or integer.
+
+    The espn_api library has inconsistent behavior across seasons:
+    - Newer seasons: returns Team objects with .team_id attribute
+    - Older seasons (2019 and earlier): may return integers directly
+    """
+    if team is None:
+        return None
+    if isinstance(team, int):
+        return str(team)
+    if hasattr(team, 'team_id'):
+        return str(team.team_id)
+    return None
+
+
 def get_owner_name(team) -> str:
     """Extract owner name from ESPN team object."""
     # The espn-api library exposes owner info differently depending on version
@@ -137,6 +186,83 @@ def get_owner_name(team) -> str:
 
     # Last resort: use team name
     return team.team_name or f"Team {team.team_id}"
+
+
+def import_matchups(cursor, season_id: str, espn_league, year: int) -> int:
+    """Import matchup data for a season."""
+    matchups_imported = 0
+
+    # Get league settings for week count
+    # Regular season typically ends around week 14-17 depending on league settings
+    regular_season_count = getattr(espn_league.settings, 'reg_season_count', 14) if hasattr(espn_league, 'settings') else 14
+    playoff_week_start = getattr(espn_league.settings, 'playoff_week_start', regular_season_count + 1) if hasattr(espn_league, 'settings') else regular_season_count + 1
+
+    # Try to get championship week from settings, otherwise estimate
+    # Most leagues have 2-3 weeks of playoffs
+    total_weeks = regular_season_count + 3  # Conservative estimate
+
+    for week in range(1, total_weeks + 1):
+        try:
+            box_scores = espn_league.box_scores(week)
+        except Exception as e:
+            # Week doesn't exist or error fetching
+            if week > regular_season_count:
+                # This is expected for playoff weeks that don't exist
+                break
+            print(f"    Warning: Could not fetch week {week}: {e}")
+            continue
+
+        if not box_scores:
+            continue
+
+        is_playoff = week >= playoff_week_start
+        # Championship is typically the last playoff week
+        is_championship = False  # We'll determine this later based on matchup type
+
+        for matchup in box_scores:
+            home_team = matchup.home_team
+            away_team = matchup.away_team
+
+            # Skip bye weeks (no opponent)
+            if home_team is None or away_team is None:
+                continue
+
+            # Extract ESPN team IDs (handles both Team objects and raw integers)
+            espn_home_id = get_espn_team_id(home_team)
+            espn_away_id = get_espn_team_id(away_team)
+
+            if not espn_home_id or not espn_away_id:
+                continue
+
+            home_team_id = get_team_id_by_espn_id(cursor, season_id, espn_home_id)
+            away_team_id = get_team_id_by_espn_id(cursor, season_id, espn_away_id)
+
+            if not home_team_id or not away_team_id:
+                print(f"    Warning: Could not find team IDs for week {week} matchup")
+                continue
+
+            home_score = getattr(matchup, 'home_score', 0.0) or 0.0
+            away_score = getattr(matchup, 'away_score', 0.0) or 0.0
+
+            # Determine if this is the championship matchup
+            # The espn_api library may have matchup type info
+            matchup_type = getattr(matchup, 'matchup_type', None)
+            is_championship_matchup = matchup_type == 'WINNERS_BRACKET' and is_playoff
+
+            upsert_matchup(
+                cursor,
+                season_id=season_id,
+                week=week,
+                home_team_id=home_team_id,
+                away_team_id=away_team_id,
+                home_score=float(home_score),
+                away_score=float(away_score),
+                is_playoff=is_playoff,
+                is_championship=is_championship_matchup
+            )
+            matchups_imported += 1
+
+    return matchups_imported
 
 
 def import_season(cursor, league_id: str, espn_league, year: int):
@@ -174,7 +300,12 @@ def import_season(cursor, league_id: str, espn_league, year: int):
         teams_imported += 1
 
     print(f"    Imported {teams_imported} teams")
-    return teams_imported
+
+    # Import matchups after teams (we need team IDs)
+    matchups_imported = import_matchups(cursor, season_id, espn_league, year)
+    print(f"    Imported {matchups_imported} matchups")
+
+    return teams_imported, matchups_imported
 
 
 def discover_seasons(espn_league_id: int, espn_s2: str, swid: str) -> list[int]:
@@ -276,6 +407,7 @@ def main():
         # Import each season
         print("Importing seasons...")
         total_teams = 0
+        total_matchups = 0
 
         for year in seasons:
             espn_league = League(
@@ -284,8 +416,9 @@ def main():
                 espn_s2=espn_s2,
                 swid=swid
             )
-            teams_count = import_season(cursor, league_id, espn_league, year)
+            teams_count, matchups_count = import_season(cursor, league_id, espn_league, year)
             total_teams += teams_count
+            total_matchups += matchups_count
 
         # Commit transaction
         conn.commit()
@@ -295,6 +428,7 @@ def main():
         print(f"Import complete!")
         print(f"  Seasons: {len(seasons)}")
         print(f"  Team records: {total_teams}")
+        print(f"  Matchups: {total_matchups}")
         print("=" * 50)
 
     except Exception as e:
