@@ -77,7 +77,7 @@ export function AnalyticsTabs({
 
 	return (
 		<Tabs value={currentTab} onValueChange={handleTabChange}>
-			<TabsList className="flex-wrap">
+			<TabsList className="h-auto flex-wrap gap-1 p-1">
 				{TABS.map((tab) => (
 					<TabsTrigger key={tab.value} value={tab.value} disabled={tab.requiresMatchups && !hasMatchupData}>
 						{tab.label}
