@@ -7,6 +7,13 @@ import type {
 	MatchupRecord,
 	WeeklyScoreRecord,
 	RivalryStats,
+	PlayoffLeaderboardRecord,
+	ChampionshipGameRecord,
+	PlayoffPerformerRecord,
+	CinderellaRecord,
+	PlayoffDroughtRecord,
+	DynastyRecord,
+	ClutchRatingRecord,
 } from '@/lib/db/queries/analytics';
 
 const STALE_TIME = 30 * 60 * 1000;
@@ -17,6 +24,7 @@ export const analyticsKeys = {
 	hallOfFame: () => [...analyticsKeys.all, 'hall-of-fame'] as const,
 	matchups: () => [...analyticsKeys.all, 'matchups'] as const,
 	rivalry: (owner1Id: string, owner2Id: string) => [...analyticsKeys.all, 'rivalry', owner1Id, owner2Id] as const,
+	playoffs: () => [...analyticsKeys.all, 'playoffs'] as const,
 };
 
 export interface HallOfFameData {
@@ -77,6 +85,37 @@ export function useRivalry(owner1Id: string, owner2Id: string) {
 			return res.json();
 		},
 		enabled: !!owner1Id && !!owner2Id && owner1Id !== owner2Id,
+		staleTime: STALE_TIME,
+		gcTime: GC_TIME,
+	});
+}
+
+export interface PlayoffsData {
+	hasPlayoffData: boolean;
+	leaderboard: PlayoffLeaderboardRecord[];
+	championshipGames: ChampionshipGameRecord[];
+	blowouts: MatchupRecord[];
+	closeGames: MatchupRecord[];
+	highScores: WeeklyScoreRecord[];
+	lowScores: WeeklyScoreRecord[];
+	performers: PlayoffPerformerRecord[];
+	cinderellas: CinderellaRecord[];
+	droughts: PlayoffDroughtRecord[];
+	heartbreakers: MatchupRecord[];
+	dynasties: DynastyRecord[];
+	clutchRatings: ClutchRatingRecord[];
+}
+
+export function usePlayoffs() {
+	return useQuery<PlayoffsData>({
+		queryKey: analyticsKeys.playoffs(),
+		queryFn: async () => {
+			const res = await fetch('/api/analytics/playoffs');
+			if (!res.ok) {
+				throw new Error('Failed to fetch playoffs data');
+			}
+			return res.json();
+		},
 		staleTime: STALE_TIME,
 		gcTime: GC_TIME,
 	});

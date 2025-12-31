@@ -121,20 +121,22 @@ def upsert_team(cursor, season_id: str, owner_id: str, espn_team_id: str,
 def upsert_matchup(cursor, season_id: str, week: int,
                    home_team_id: str, away_team_id: str,
                    home_score: float, away_score: float,
-                   is_playoff: bool, is_championship: bool) -> str:
+                   is_playoff: bool, is_championship: bool,
+                   matchup_type: str = 'NONE') -> str:
     """Upsert matchup and return its UUID."""
     cursor.execute(
         """
-        INSERT INTO matchups (season_id, week, home_team_id, away_team_id, home_score, away_score, is_playoff, is_championship)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO matchups (season_id, week, home_team_id, away_team_id, home_score, away_score, is_playoff, is_championship, matchup_type)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (season_id, week, home_team_id, away_team_id) DO UPDATE SET
             home_score = EXCLUDED.home_score,
             away_score = EXCLUDED.away_score,
             is_playoff = EXCLUDED.is_playoff,
-            is_championship = EXCLUDED.is_championship
+            is_championship = EXCLUDED.is_championship,
+            matchup_type = EXCLUDED.matchup_type
         RETURNING id
         """,
-        (season_id, week, home_team_id, away_team_id, home_score, away_score, is_playoff, is_championship)
+        (season_id, week, home_team_id, away_team_id, home_score, away_score, is_playoff, is_championship, matchup_type)
     )
     return cursor.fetchone()[0]
 
@@ -189,17 +191,24 @@ def get_owner_name(team) -> str:
 
 
 def import_matchups(cursor, season_id: str, espn_league, year: int) -> int:
-    """Import matchup data for a season."""
-    matchups_imported = 0
+    """Import matchup data for a season.
 
+    Uses the ESPN API's playoffTierType field (exposed as matchup_type) to correctly
+    identify playoff vs consolation games:
+    - 'NONE': Regular season game
+    - 'WINNERS_BRACKET': Playoff bracket (competing for championship)
+    - 'LOSERS_BRACKET': Consolation bracket
+    """
     # Get league settings for week count
-    # Regular season typically ends around week 14-17 depending on league settings
     regular_season_count = getattr(espn_league.settings, 'reg_season_count', 14) if hasattr(espn_league, 'settings') else 14
-    playoff_week_start = getattr(espn_league.settings, 'playoff_week_start', regular_season_count + 1) if hasattr(espn_league, 'settings') else regular_season_count + 1
 
-    # Try to get championship week from settings, otherwise estimate
     # Most leagues have 2-3 weeks of playoffs
     total_weeks = regular_season_count + 3  # Conservative estimate
+
+    # First pass: collect all matchups and find the championship week
+    # (the final week that has WINNERS_BRACKET games)
+    matchup_data = []
+    max_winners_bracket_week = 0
 
     for week in range(1, total_weeks + 1):
         try:
@@ -214,10 +223,6 @@ def import_matchups(cursor, season_id: str, espn_league, year: int) -> int:
 
         if not box_scores:
             continue
-
-        is_playoff = week >= playoff_week_start
-        # Championship is typically the last playoff week
-        is_championship = False  # We'll determine this later based on matchup type
 
         for matchup in box_scores:
             home_team = matchup.home_team
@@ -244,23 +249,47 @@ def import_matchups(cursor, season_id: str, espn_league, year: int) -> int:
             home_score = getattr(matchup, 'home_score', 0.0) or 0.0
             away_score = getattr(matchup, 'away_score', 0.0) or 0.0
 
-            # Determine if this is the championship matchup
-            # The espn_api library may have matchup type info
-            matchup_type = getattr(matchup, 'matchup_type', None)
-            is_championship_matchup = matchup_type == 'WINNERS_BRACKET' and is_playoff
+            # Get matchup type from ESPN API (playoffTierType)
+            # Values: 'NONE', 'WINNERS_BRACKET', 'LOSERS_BRACKET'
+            matchup_type = getattr(matchup, 'matchup_type', 'NONE') or 'NONE'
 
-            upsert_matchup(
-                cursor,
-                season_id=season_id,
-                week=week,
-                home_team_id=home_team_id,
-                away_team_id=away_team_id,
-                home_score=float(home_score),
-                away_score=float(away_score),
-                is_playoff=is_playoff,
-                is_championship=is_championship_matchup
-            )
-            matchups_imported += 1
+            # Track the latest week with WINNERS_BRACKET games (championship week)
+            if matchup_type == 'WINNERS_BRACKET':
+                max_winners_bracket_week = max(max_winners_bracket_week, week)
+
+            matchup_data.append({
+                'week': week,
+                'home_team_id': home_team_id,
+                'away_team_id': away_team_id,
+                'home_score': float(home_score),
+                'away_score': float(away_score),
+                'matchup_type': matchup_type,
+            })
+
+    # Second pass: insert matchups with correct is_playoff and is_championship flags
+    matchups_imported = 0
+    for data in matchup_data:
+        matchup_type = data['matchup_type']
+
+        # is_playoff = True only for WINNERS_BRACKET games (not consolation)
+        is_playoff = matchup_type == 'WINNERS_BRACKET'
+
+        # is_championship = WINNERS_BRACKET game in the final playoff week
+        is_championship = matchup_type == 'WINNERS_BRACKET' and data['week'] == max_winners_bracket_week
+
+        upsert_matchup(
+            cursor,
+            season_id=season_id,
+            week=data['week'],
+            home_team_id=data['home_team_id'],
+            away_team_id=data['away_team_id'],
+            home_score=data['home_score'],
+            away_score=data['away_score'],
+            is_playoff=is_playoff,
+            is_championship=is_championship,
+            matchup_type=matchup_type
+        )
+        matchups_imported += 1
 
     return matchups_imported
 

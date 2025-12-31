@@ -129,6 +129,19 @@ export function RivalrySkeleton() {
 	);
 }
 
+export function PlayoffsSkeleton() {
+	return (
+		<div className="space-y-6">
+			<div className="flex items-center gap-2">
+				<Skeleton className="h-9 w-28" />
+				<Skeleton className="h-9 w-24" />
+				<Skeleton className="h-9 w-24" />
+			</div>
+			<TableSkeleton rows={10} cols={6} />
+		</div>
+	);
+}
+
 export function AnalyticsTabSkeleton({ tab }: { tab: string }) {
 	switch (tab) {
 		case 'hall-of-fame':
@@ -141,6 +154,8 @@ export function AnalyticsTabSkeleton({ tab }: { tab: string }) {
 			return <WeeklyRecordsSkeleton />;
 		case 'rivalry':
 			return <RivalrySkeleton />;
+		case 'playoffs':
+			return <PlayoffsSkeleton />;
 		default:
 			return <TableSkeleton />;
 	}
