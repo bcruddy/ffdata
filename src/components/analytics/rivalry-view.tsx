@@ -23,7 +23,7 @@ export function RivalryView({ owners }: RivalryViewProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>Rivalry Dashboard</CardTitle>
-					<CardDescription>Compare head-to-head records between two owners (2020+)</CardDescription>
+					<CardDescription>Compare head-to-head records between two owners (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground py-8 text-center">
@@ -39,7 +39,7 @@ export function RivalryView({ owners }: RivalryViewProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>Rivalry Dashboard</CardTitle>
-					<CardDescription>Select two owners to compare their head-to-head history (2020+)</CardDescription>
+					<CardDescription>Select two owners to compare their head-to-head history (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -152,7 +152,7 @@ function RivalryStatsCard({ stats }: { stats: RivalryStats }) {
 					{stats.owner1Name} vs {stats.owner2Name}
 				</CardTitle>
 				<CardDescription>
-					{stats.totalGames} game{stats.totalGames !== 1 ? 's' : ''} played (2020+)
+					{stats.totalGames} game{stats.totalGames !== 1 ? 's' : ''} played (2019+)
 					{leader && <span className="ml-2 text-green-500">({leader} leads)</span>}
 				</CardDescription>
 			</CardHeader>

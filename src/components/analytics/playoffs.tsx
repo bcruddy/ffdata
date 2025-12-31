@@ -290,6 +290,9 @@ function MatchupList({ records, type }: { records: PlayoffsData['blowouts']; typ
 
 	return (
 		<>
+			<p className="text-sm text-muted-foreground mb-4">
+				{type === 'blowout' ? 'Largest playoff margins of victory' : 'Closest playoff games'} (2019+)
+			</p>
 			<div className="hidden sm:block">
 				<Table>
 					<TableHeader>
@@ -385,6 +388,9 @@ function ScoreList({ records, type }: { records: PlayoffsData['highScores']; typ
 
 	return (
 		<>
+			<p className="text-sm text-muted-foreground mb-4">
+				{type === 'high' ? 'Highest playoff game scores' : 'Lowest playoff game scores'} (2019+)
+			</p>
 			<div className="hidden sm:block">
 				<Table>
 					<TableHeader>
@@ -712,7 +718,7 @@ function HeartbreakersView({ heartbreakers }: { heartbreakers: PlayoffsData['hea
 
 	return (
 		<div className="space-y-4">
-			<p className="text-sm text-muted-foreground">Closest playoff losses - so close yet so far</p>
+			<p className="text-sm text-muted-foreground">Closest playoff losses - so close yet so far (2019+)</p>
 			{heartbreakers.map((game) => (
 				<div key={game.matchupId} className="bg-muted/50 rounded-lg p-4">
 					<div className="flex justify-between items-center mb-2">
