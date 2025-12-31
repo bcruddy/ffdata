@@ -666,7 +666,6 @@ function DroughtsView({ droughts }: { droughts: PlayoffsData['droughts'] }) {
 			{activeDroughts.length > 0 && (
 				<div>
 					<h4 className="font-medium mb-3">Current Playoff Droughts</h4>
-					<p className="text-sm text-muted-foreground mb-3">Consecutive seasons without a playoff appearance (2019+)</p>
 					<div className="space-y-2">
 						{activeDroughts.slice(0, 5).map((d) => (
 							<div key={d.ownerId} className="flex justify-between items-center bg-muted/50 rounded-lg px-3 py-2">
