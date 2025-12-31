@@ -2,6 +2,16 @@
 
 Visualize and analyze historical ESPN fantasy football data.
 
+## Features
+
+- **Standings**: Historical standings with year range filters and aggregate/average views
+- **Hall of Fame**: Championship and Sacko records
+- **Playoffs**: Leaderboard, records, blowouts, close games, cinderella runs, droughts, dynasties
+- **Head-to-Head**: Win/loss matrix between all owners
+- **Records**: Biggest blowouts and closest games
+- **Weekly Scores**: Highest and lowest weekly performances
+- **Rivalry**: Deep comparison between any two owners
+
 ## Tech Stack
 
 - **Framework**: Next.js 16.1 (App Router) / TypeScript
@@ -46,6 +56,7 @@ ESPN_SWID=
 - **owners**: Human owners (persist across seasons)
 - **seasons**: League years
 - **teams**: Season-specific team data
+- **matchups**: Week-by-week game results (scores, playoff flags)
 
 ### Migrations
 
