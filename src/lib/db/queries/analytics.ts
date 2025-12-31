@@ -1018,13 +1018,13 @@ export async function getPlayoffLeaderboard(): Promise<PlayoffLeaderboardRecord[
       COALESCE(SUM(pr.score), 0) as playoff_points_for,
       COALESCE(SUM(pr.opp_score), 0) as playoff_points_against,
       COUNT(pr.matchup_id) as total_playoff_games
-    FROM owners o
+    FROM (SELECT DISTINCT owner_id FROM owner_playoff_years) po
+    JOIN owners o ON o.id = po.owner_id
     LEFT JOIN playoff_results pr ON pr.owner_id = o.id
     LEFT JOIN first_round_exits fre ON fre.owner_id = o.id
     LEFT JOIN championship_appearances ca ON ca.owner_id = o.id
     LEFT JOIN championships_won cw ON cw.owner_id = o.id
     GROUP BY o.id, o.name, cw.titles, ca.appearances, fre.exits
-    HAVING COUNT(pr.matchup_id) > 0
     ORDER BY COALESCE(cw.titles, 0) DESC, playoff_wins DESC
   `) as PlayoffLeaderboardRow[];
 

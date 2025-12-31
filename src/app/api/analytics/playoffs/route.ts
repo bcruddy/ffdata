@@ -18,9 +18,10 @@ import {
 
 async function checkPlayoffData(): Promise<boolean> {
 	try {
-		const result = (await sql`SELECT EXISTS(SELECT 1 FROM matchups WHERE is_playoff = true LIMIT 1) as has_data`) as {
-			has_data: boolean;
-		}[];
+		const result =
+			(await sql`SELECT EXISTS(SELECT 1 FROM matchups WHERE matchup_type = 'WINNERS_BRACKET' LIMIT 1) as has_data`) as {
+				has_data: boolean;
+			}[];
 		return result[0]?.has_data || false;
 	} catch {
 		return false;
