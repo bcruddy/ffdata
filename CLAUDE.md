@@ -28,9 +28,13 @@ FF Data is a Next.js 16.1 app for visualizing ESPN fantasy football historical d
 ### Key Directories
 
 - `src/app/` - Next.js App Router pages
+- `src/app/api/analytics/` - Analytics API routes
 - `src/components/ui/` - shadcn components (don't modify)
-- `src/components/layout/` - App layout components
+- `src/components/layout/` - App layout components (header, footer)
+- `src/components/analytics/` - Analytics feature components
+- `src/components/standings/` - Standings page components
 - `src/lib/db/` - Database client and queries
+- `src/lib/hooks/` - TanStack Query hooks
 - `src/lib/espn/` - ESPN API service (stub)
 - `src/schemas/` - Zod validation schemas
 - `src/types/` - TypeScript types
@@ -38,16 +42,30 @@ FF Data is a Next.js 16.1 app for visualizing ESPN fantasy football historical d
 
 ### Database Schema
 
-4 tables: leagues, owners, seasons, teams
+5 tables: leagues, owners, seasons, teams, matchups
 
 - owners persist across seasons (for multi-year analytics)
 - teams belong to a season and an owner
+- matchups track week-by-week game results with playoff/championship flags
 
 ### Authentication
 
 - Clerk middleware protects all routes except `/`, `/sign-in`, `/sign-up`
 - Use `auth()` from `@clerk/nextjs/server` in server components
 - Use `useUser()` from `@clerk/nextjs` in client components
+
+### Routes
+
+- `/` - Landing page (redirects to /standings if authenticated)
+- `/standings` - Historical standings with year range filters and aggregate/average views
+- `/analytics` - Analytics dashboard with tabs: Hall of Fame, Playoffs, Head-to-Head, Records, Weekly Scores, Rivalry
+
+### API Routes
+
+- `/api/analytics/hall-of-fame` - Championships and Sacko records
+- `/api/analytics/matchups` - H2H records, matchup records, weekly scores
+- `/api/analytics/playoffs` - Playoff leaderboard, records, and insights
+- `/api/analytics/rivalry` - Rivalry stats between two owners
 
 ## Coding Conventions
 
@@ -88,6 +106,7 @@ FF Data is a Next.js 16.1 app for visualizing ESPN fantasy football historical d
 pnpm dev              # Start dev server
 pnpm build            # Production build
 pnpm lint             # Run ESLint
+pnpm format           # Format with Prettier
 pnpm db:migrate       # Run migrations
 pnpm db:migrate:down  # Rollback migration
 ```
