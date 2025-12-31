@@ -24,7 +24,7 @@ export function LuckStreaks({ luckRecords, streakRecords }: LuckStreaksProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>Luck & Streaks</CardTitle>
-					<CardDescription>Luck analysis and winning/losing streaks (2020+)</CardDescription>
+					<CardDescription>Luck analysis and winning/losing streaks (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground py-8 text-center">
@@ -63,7 +63,7 @@ function LuckAnalysis({ records }: { records: LuckRecord[] }) {
 				<CardDescription>
 					Lucky wins: Beat an opponent who scored above the weekly average
 					<br />
-					Unlucky losses: Lost while scoring above the weekly average (2020+)
+					Unlucky losses: Lost while scoring above the weekly average (2019+)
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -123,7 +123,7 @@ function StreaksTable({ records }: { records: StreakRecord[] }) {
 						<span className="text-green-500">🔥</span>
 						Winning Streaks
 					</CardTitle>
-					<CardDescription>Longest winning streaks in league history (2020+)</CardDescription>
+					<CardDescription>Longest winning streaks in league history (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					{winningStreaks.length === 0 ? (
@@ -176,7 +176,7 @@ function StreaksTable({ records }: { records: StreakRecord[] }) {
 						<span className="text-red-500">❄️</span>
 						Losing Streaks
 					</CardTitle>
-					<CardDescription>Longest losing streaks (hall of shame) (2020+)</CardDescription>
+					<CardDescription>Longest losing streaks (hall of shame) (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					{losingStreaks.length === 0 ? (

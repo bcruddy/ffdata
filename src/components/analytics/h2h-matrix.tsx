@@ -55,7 +55,7 @@ export function H2HMatrix({ records }: H2HMatrixProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>Head-to-Head Matrix</CardTitle>
-					<CardDescription>All-time matchup records (2020+)</CardDescription>
+					<CardDescription>All-time matchup records (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground py-8 text-center">
@@ -70,7 +70,7 @@ export function H2HMatrix({ records }: H2HMatrixProps) {
 		<Card>
 			<CardHeader>
 				<CardTitle>Head-to-Head Matrix</CardTitle>
-				<CardDescription>All-time matchup records (rows vs columns) (2020+)</CardDescription>
+				<CardDescription>All-time matchup records (rows vs columns) (2019+)</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="overflow-x-auto">

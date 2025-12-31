@@ -7,18 +7,21 @@ import { H2HMatrix } from './h2h-matrix';
 import { MatchupRecords } from './matchup-records';
 import { WeeklyRecords } from './weekly-records';
 import { RivalryView } from './rivalry-view';
-import { useHallOfFame, useMatchups } from '@/lib/hooks/use-analytics';
+import { Playoffs } from './playoffs';
+import { useHallOfFame, useMatchups, usePlayoffs } from '@/lib/hooks/use-analytics';
 import {
 	HallOfFameSkeleton,
 	H2HMatrixSkeleton,
 	MatchupRecordsSkeleton,
 	WeeklyRecordsSkeleton,
 	RivalrySkeleton,
+	PlayoffsSkeleton,
 } from './analytics-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const TABS = [
 	{ value: 'hall-of-fame', label: 'Hall of Fame', requiresMatchups: false },
+	{ value: 'playoffs', label: 'Playoffs', requiresMatchups: true },
 	{ value: 'head-to-head', label: 'Head-to-Head', requiresMatchups: true },
 	{ value: 'records', label: 'Records', requiresMatchups: true },
 	{ value: 'weekly-scores', label: 'Weekly Scores', requiresMatchups: true },
@@ -91,6 +94,16 @@ function RivalryTab() {
 	return <RivalryView owners={data.owners} />;
 }
 
+function PlayoffsTab() {
+	const { data, isLoading, error } = usePlayoffs();
+
+	if (isLoading) return <PlayoffsSkeleton />;
+	if (error) return <ErrorCard title="Playoffs" message="Failed to load playoff data. Please try again." />;
+	if (!data) return null;
+
+	return <Playoffs data={data} />;
+}
+
 export function AnalyticsTabs() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -124,6 +137,10 @@ export function AnalyticsTabs() {
 
 			<TabsContent value="hall-of-fame" className="mt-6 animate-in fade-in-50 duration-200">
 				<HallOfFameTab />
+			</TabsContent>
+
+			<TabsContent value="playoffs" className="mt-6 animate-in fade-in-50 duration-200">
+				<PlayoffsTab />
 			</TabsContent>
 
 			<TabsContent value="head-to-head" className="mt-6 animate-in fade-in-50 duration-200">

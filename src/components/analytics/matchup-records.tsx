@@ -25,7 +25,7 @@ export function MatchupRecords({ blowouts, closeGames }: MatchupRecordsProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>Matchup Records</CardTitle>
-					<CardDescription>Biggest blowouts and closest games (2020+)</CardDescription>
+					<CardDescription>Biggest blowouts and closest games (2019+)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground py-8 text-center">
@@ -44,8 +44,8 @@ export function MatchupRecords({ blowouts, closeGames }: MatchupRecordsProps) {
 						<CardTitle>{viewMode === 'blowouts' ? 'Biggest Blowouts' : 'Closest Games'}</CardTitle>
 						<CardDescription>
 							{viewMode === 'blowouts'
-								? 'Largest margin of victory in league history (2020+)'
-								: 'Nail-biters decided by the smallest margins (2020+)'}
+								? 'Largest margin of victory in league history (2019+)'
+								: 'Nail-biters decided by the smallest margins (2019+)'}
 						</CardDescription>
 					</div>
 					<div className="flex items-center gap-2">
