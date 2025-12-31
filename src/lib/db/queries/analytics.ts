@@ -1396,8 +1396,8 @@ export async function getCinderellaRuns(): Promise<CinderellaRecord[]> {
       final_standing as finish,
       team_count
     FROM regular_season_ranks
-    WHERE final_standing <= 2  -- Made championship game
-      AND seed > (team_count / 2)  -- Was in bottom half going into playoffs
+    WHERE final_standing = 1  -- Won the championship
+      AND seed IN (5, 6)  -- Was a 5 or 6 seed going into playoffs
     ORDER BY seed DESC, final_standing ASC
   `) as CinderellaRow[];
 
