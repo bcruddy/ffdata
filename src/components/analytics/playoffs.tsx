@@ -744,32 +744,25 @@ function CinderellasView({ cinderellas }: { cinderellas: PlayoffsData['cinderell
 		return (
 			<div className="py-4 text-center">
 				<p className="text-muted-foreground">No Cinderella stories yet.</p>
-				<p className="text-sm text-muted-foreground mt-1">
-					Requires a team from the bottom half of regular season standings to make the championship game.
-				</p>
+				<p className="text-sm text-muted-foreground mt-1">#5 or #6 seeds that defied the odds to win it all.</p>
 			</div>
 		);
 	}
 
 	return (
 		<div className="space-y-4">
-			<p className="text-sm text-muted-foreground">Teams from the bottom half that made championship runs</p>
+			<p className="text-sm text-muted-foreground">Low seeds that shocked the league and won championships</p>
 			{cinderellas.map((run) => (
 				<div key={`${run.ownerId}-${run.year}`} className="bg-muted/50 rounded-lg p-4">
 					<div className="flex justify-between items-center mb-2">
-						<span className="font-bold">
-							{run.finish === 1 ? '👑 ' : ''}
-							{run.ownerName}
-						</span>
+						<span className="font-bold">👑 {run.ownerName}</span>
 						<span className="font-mono text-muted-foreground">{run.year}</span>
 					</div>
 					<div className="flex justify-between items-center text-sm">
 						<span className="text-muted-foreground">
 							Seed #{run.seed} of {run.teamCount}
 						</span>
-						<span className={run.finish === 1 ? 'text-yellow-500 font-bold' : 'font-medium'}>
-							{run.finish === 1 ? 'Won Championship 🏆' : 'Made Finals'}
-						</span>
+						<span className="text-yellow-500 font-bold">Won Championship 🏆</span>
 					</div>
 				</div>
 			))}
