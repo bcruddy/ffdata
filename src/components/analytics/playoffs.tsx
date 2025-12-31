@@ -76,7 +76,7 @@ function PlayoffLeaderboard({ data }: { data: PlayoffsData }) {
 		<Card>
 			<CardHeader>
 				<CardTitle>Playoff Leaderboard</CardTitle>
-				<CardDescription>Career playoff statistics by owner</CardDescription>
+				<CardDescription>Career playoff statistics by owner (2019+)</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="hidden sm:block overflow-x-auto">
@@ -552,7 +552,7 @@ function ClutchView({ ratings }: { ratings: PlayoffsData['clutchRatings'] }) {
 	return (
 		<>
 			<p className="text-sm text-muted-foreground mb-4">
-				Playoff win percentage - every playoff game is an elimination game
+				Playoff win percentage - every playoff game is an elimination game (2019+)
 			</p>
 			<div className="hidden sm:block">
 				<Table>
@@ -666,7 +666,7 @@ function DroughtsView({ droughts }: { droughts: PlayoffsData['droughts'] }) {
 			{activeDroughts.length > 0 && (
 				<div>
 					<h4 className="font-medium mb-3">Current Playoff Droughts</h4>
-					<p className="text-sm text-muted-foreground mb-3">Consecutive seasons without a playoff appearance</p>
+					<p className="text-sm text-muted-foreground mb-3">Consecutive seasons without a playoff appearance (2019+)</p>
 					<div className="space-y-2">
 						{activeDroughts.slice(0, 5).map((d) => (
 							<div key={d.ownerId} className="flex justify-between items-center bg-muted/50 rounded-lg px-3 py-2">
