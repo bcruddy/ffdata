@@ -76,7 +76,7 @@ function PlayoffLeaderboard({ data }: { data: PlayoffsData }) {
 		<Card>
 			<CardHeader>
 				<CardTitle>Playoff Leaderboard</CardTitle>
-				<CardDescription>Career playoff statistics by owner (2019+)</CardDescription>
+				<CardDescription>Career playoff statistics by owner</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="hidden sm:block overflow-x-auto">
