@@ -973,8 +973,51 @@ export async function getPlayoffLeaderboard(): Promise<PlayoffLeaderboardRecord[
         CASE WHEN score < opp_score THEN 1 ELSE 0 END as is_loss
       FROM playoff_games
     ),
+    -- Inferred playoff results from final_standing (pre-2019)
+    -- 1st: 2 wins, 0 losses | 2nd: 1 win, 1 loss | 3rd: 1 win, 1 loss | 4th: 0 wins, 2 losses
+    inferred_playoff_stats AS (
+      SELECT
+        t.owner_id,
+        s.year,
+        t.final_standing,
+        CASE
+          WHEN t.final_standing = 1 THEN 2
+          WHEN t.final_standing = 2 THEN 1
+          WHEN t.final_standing = 3 THEN 1
+          ELSE 0
+        END as inferred_wins,
+        CASE
+          WHEN t.final_standing = 1 THEN 0
+          WHEN t.final_standing = 2 THEN 1
+          WHEN t.final_standing = 3 THEN 1
+          ELSE 2
+        END as inferred_losses,
+        CASE WHEN t.final_standing <= 2 THEN 1 ELSE 0 END as is_championship_appearance,
+        CASE WHEN t.final_standing = 1 THEN 1 ELSE 0 END as is_championship_win,
+        CASE WHEN t.final_standing >= 3 THEN 1 ELSE 0 END as is_first_round_exit
+      FROM teams t
+      JOIN seasons s ON t.season_id = s.id
+      WHERE s.year < 2019
+        AND t.final_standing IS NOT NULL
+        AND t.final_standing <= 4
+    ),
+    -- Aggregate inferred stats per owner
+    inferred_totals AS (
+      SELECT
+        owner_id,
+        COUNT(*) as inferred_appearances,
+        SUM(inferred_wins) as inferred_wins,
+        SUM(inferred_losses) as inferred_losses,
+        SUM(is_championship_appearance) as inferred_champ_appearances,
+        SUM(is_championship_win) as inferred_titles,
+        SUM(is_first_round_exit) as inferred_first_round_exits
+      FROM inferred_playoff_stats
+      GROUP BY owner_id
+    ),
     owner_playoff_years AS (
       SELECT DISTINCT owner_id, year FROM playoff_results
+      UNION
+      SELECT DISTINCT owner_id, year FROM inferred_playoff_stats
     ),
     -- First round detection: first playoff week of each season for each owner
     first_round_games AS (
@@ -1010,22 +1053,23 @@ export async function getPlayoffLeaderboard(): Promise<PlayoffLeaderboardRecord[
       o.id as owner_id,
       o.name as owner_name,
       COALESCE((SELECT COUNT(*) FROM owner_playoff_years opy WHERE opy.owner_id = o.id), 0) as playoff_appearances,
-      COALESCE(SUM(pr.is_win), 0) as playoff_wins,
-      COALESCE(SUM(pr.is_loss), 0) as playoff_losses,
-      COALESCE(cw.titles, 0) as championships,
-      COALESCE(ca.appearances, 0) as championship_appearances,
-      COALESCE(fre.exits, 0) as first_round_exits,
+      COALESCE(SUM(pr.is_win), 0) + COALESCE(it.inferred_wins, 0) as playoff_wins,
+      COALESCE(SUM(pr.is_loss), 0) + COALESCE(it.inferred_losses, 0) as playoff_losses,
+      COALESCE(cw.titles, 0) + COALESCE(it.inferred_titles, 0) as championships,
+      COALESCE(ca.appearances, 0) + COALESCE(it.inferred_champ_appearances, 0) as championship_appearances,
+      COALESCE(fre.exits, 0) + COALESCE(it.inferred_first_round_exits, 0) as first_round_exits,
       COALESCE(SUM(pr.score), 0) as playoff_points_for,
       COALESCE(SUM(pr.opp_score), 0) as playoff_points_against,
       COUNT(pr.matchup_id) as total_playoff_games
     FROM (SELECT DISTINCT owner_id FROM owner_playoff_years) po
     JOIN owners o ON o.id = po.owner_id
     LEFT JOIN playoff_results pr ON pr.owner_id = o.id
+    LEFT JOIN inferred_totals it ON it.owner_id = o.id
     LEFT JOIN first_round_exits fre ON fre.owner_id = o.id
     LEFT JOIN championship_appearances ca ON ca.owner_id = o.id
     LEFT JOIN championships_won cw ON cw.owner_id = o.id
-    GROUP BY o.id, o.name, cw.titles, ca.appearances, fre.exits
-    ORDER BY COALESCE(cw.titles, 0) DESC, playoff_wins DESC
+    GROUP BY o.id, o.name, cw.titles, ca.appearances, fre.exits, it.inferred_wins, it.inferred_losses, it.inferred_titles, it.inferred_champ_appearances, it.inferred_first_round_exits
+    ORDER BY COALESCE(cw.titles, 0) + COALESCE(it.inferred_titles, 0) DESC, playoff_wins DESC
   `) as PlayoffLeaderboardRow[];
 
 	return rows.map((row) => {
@@ -1432,6 +1476,7 @@ export async function getPlayoffDroughts(): Promise<PlayoffDroughtRecord[]> {
       JOIN seasons s ON t.season_id = s.id
     ),
     playoff_years AS (
+      -- From matchup data (2019+)
       SELECT DISTINCT
         t.owner_id,
         s.year
@@ -1439,6 +1484,18 @@ export async function getPlayoffDroughts(): Promise<PlayoffDroughtRecord[]> {
       JOIN seasons s ON m.season_id = s.id
       JOIN teams t ON (t.id = m.home_team_id OR t.id = m.away_team_id) AND t.season_id = s.id
       WHERE m.matchup_type = 'WINNERS_BRACKET'
+
+      UNION
+
+      -- Inferred from final_standing (pre-2019: top 4 made playoffs)
+      SELECT DISTINCT
+        t.owner_id,
+        s.year
+      FROM teams t
+      JOIN seasons s ON t.season_id = s.id
+      WHERE s.year < 2019
+        AND t.final_standing IS NOT NULL
+        AND t.final_standing <= 4
     ),
     owner_playoff_status AS (
       SELECT
@@ -1658,8 +1715,55 @@ export async function getClutchRatings(): Promise<ClutchRatingRecord[]> {
         SUM(CASE WHEN is_championship AND score > opp_score THEN 1 ELSE 0 END) as championship_wins
       FROM playoff_games
       GROUP BY owner_id, owner_name
+    ),
+    -- Inferred stats from final_standing (pre-2019)
+    -- 1st: 2 games, 2 wins, 1 champ game, 1 champ win
+    -- 2nd: 2 games, 1 win, 1 champ game, 0 champ wins
+    -- 3rd: 2 games, 1 win, 0 champ games
+    -- 4th: 2 games, 0 wins, 0 champ games
+    inferred_stats AS (
+      SELECT
+        t.owner_id,
+        o.name as owner_name,
+        2 as elimination_games,
+        CASE
+          WHEN t.final_standing = 1 THEN 2
+          WHEN t.final_standing IN (2, 3) THEN 1
+          ELSE 0
+        END as elimination_wins,
+        CASE WHEN t.final_standing <= 2 THEN 1 ELSE 0 END as championship_games,
+        CASE WHEN t.final_standing = 1 THEN 1 ELSE 0 END as championship_wins
+      FROM teams t
+      JOIN seasons s ON t.season_id = s.id
+      JOIN owners o ON t.owner_id = o.id
+      WHERE s.year < 2019
+        AND t.final_standing IS NOT NULL
+        AND t.final_standing <= 4
+    ),
+    inferred_totals AS (
+      SELECT
+        owner_id,
+        owner_name,
+        SUM(elimination_games) as elimination_games,
+        SUM(elimination_wins) as elimination_wins,
+        SUM(championship_games) as championship_games,
+        SUM(championship_wins) as championship_wins
+      FROM inferred_stats
+      GROUP BY owner_id, owner_name
+    ),
+    -- Combine actual and inferred stats
+    combined_stats AS (
+      SELECT
+        COALESCE(es.owner_id, it.owner_id) as owner_id,
+        COALESCE(es.owner_name, it.owner_name) as owner_name,
+        COALESCE(es.elimination_games, 0) + COALESCE(it.elimination_games, 0) as elimination_games,
+        COALESCE(es.elimination_wins, 0) + COALESCE(it.elimination_wins, 0) as elimination_wins,
+        COALESCE(es.championship_games, 0) + COALESCE(it.championship_games, 0) as championship_games,
+        COALESCE(es.championship_wins, 0) + COALESCE(it.championship_wins, 0) as championship_wins
+      FROM elimination_stats es
+      FULL OUTER JOIN inferred_totals it ON es.owner_id = it.owner_id
     )
-    SELECT * FROM elimination_stats
+    SELECT * FROM combined_stats
     WHERE elimination_games > 0
     ORDER BY
       CASE WHEN elimination_games > 0 THEN elimination_wins::float / elimination_games ELSE 0 END DESC,
