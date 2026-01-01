@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SortableHeader } from '@/components/ui/sortable-header';
+import { useTableSort } from '@/lib/hooks/use-table-sort';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ChampionshipRecord, SackoRecord, OwnerHallOfFameStats } from '@/lib/db/queries/analytics';
@@ -151,7 +153,39 @@ function TimelineView({ championships, sackos }: { championships: ChampionshipRe
 	);
 }
 
+type HallOfFameSortField = 'ownerName' | 'championships' | 'lastChampionshipYear' | 'yearsSinceChampionship' | 'sackos';
+
 function LeaderboardView({ ownerStats }: { ownerStats: OwnerHallOfFameStats[] }) {
+	const compareFn = useCallback((a: OwnerHallOfFameStats, b: OwnerHallOfFameStats, field: HallOfFameSortField) => {
+		switch (field) {
+			case 'ownerName':
+				return a.ownerName.toLowerCase().localeCompare(b.ownerName.toLowerCase());
+			case 'championships':
+				return a.championships - b.championships;
+			case 'lastChampionshipYear':
+				// Null values (never won) sort to end when descending, beginning when ascending
+				if (a.lastChampionshipYear === null && b.lastChampionshipYear === null) return 0;
+				if (a.lastChampionshipYear === null) return -1;
+				if (b.lastChampionshipYear === null) return 1;
+				return a.lastChampionshipYear - b.lastChampionshipYear;
+			case 'yearsSinceChampionship':
+				// Null values (never won) sort to end when descending, beginning when ascending
+				if (a.yearsSinceChampionship === null && b.yearsSinceChampionship === null) return 0;
+				if (a.yearsSinceChampionship === null) return -1;
+				if (b.yearsSinceChampionship === null) return 1;
+				return a.yearsSinceChampionship - b.yearsSinceChampionship;
+			case 'sackos':
+				return a.sackos - b.sackos;
+			default:
+				return 0;
+		}
+	}, []);
+
+	const { sortField, sortDirection, handleSort, sortedData } = useTableSort(ownerStats, compareFn, {
+		defaultField: 'championships' as HallOfFameSortField,
+		textFields: ['ownerName' as HallOfFameSortField],
+	});
+
 	if (ownerStats.length === 0) {
 		return <p className="text-muted-foreground py-8 text-center">No championship or sacko data available.</p>;
 	}
@@ -166,15 +200,49 @@ function LeaderboardView({ ownerStats }: { ownerStats: OwnerHallOfFameStats[] })
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Owner</TableHead>
-							<TableHead className="text-center">Titles</TableHead>
-							<TableHead className="hidden text-center sm:table-cell">Last Title</TableHead>
-							<TableHead className="hidden text-center md:table-cell">Drought</TableHead>
-							<TableHead className="text-center">Sackos</TableHead>
+							<SortableHeader field="ownerName" currentField={sortField} direction={sortDirection} onSort={handleSort}>
+								Owner
+							</SortableHeader>
+							<SortableHeader
+								field="championships"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Titles
+							</SortableHeader>
+							<SortableHeader
+								field="lastChampionshipYear"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="hidden text-center sm:table-cell"
+							>
+								Last Title
+							</SortableHeader>
+							<SortableHeader
+								field="yearsSinceChampionship"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="hidden text-center md:table-cell"
+							>
+								Drought
+							</SortableHeader>
+							<SortableHeader
+								field="sackos"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Sackos
+							</SortableHeader>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{ownerStats.map((owner) => (
+						{sortedData.map((owner) => (
 							<TableRow key={owner.ownerId}>
 								<TableCell className="font-medium">{owner.ownerName}</TableCell>
 								<TableCell className="text-center">

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SortableHeader } from '@/components/ui/sortable-header';
+import { useTableSort } from '@/lib/hooks/use-table-sort';
 import { cn } from '@/lib/utils';
 import type { OwnerWithStats } from '@/types';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
 type SortField =
 	| 'name'
@@ -16,27 +17,10 @@ type SortField =
 	| 'pointDiff'
 	| 'championships';
 
-type SortDirection = 'asc' | 'desc';
-
 interface StandingsTableProps {
 	data: OwnerWithStats[];
 	view?: 'aggregate' | 'average';
 	hasFilters?: boolean;
-}
-
-interface SortIconProps {
-	field: SortField;
-	currentField: SortField;
-	direction: SortDirection;
-}
-
-interface SortableHeaderProps {
-	field: SortField;
-	currentField: SortField;
-	direction: SortDirection;
-	onSort: (field: SortField) => void;
-	children: React.ReactNode;
-	className?: string;
 }
 
 function formatNumber(num: number, decimals = 0): string {
@@ -65,93 +49,36 @@ function formatPointDiff(diff: number): string {
 	return formatted;
 }
 
-function SortIcon({ field, currentField, direction }: SortIconProps) {
-	if (currentField !== field) {
-		return <ArrowUpDown className="ml-1 inline h-4 w-4 text-muted-foreground/50" />;
-	}
-	return direction === 'asc' ? (
-		<ArrowUp className="ml-1 inline h-4 w-4" />
-	) : (
-		<ArrowDown className="ml-1 inline h-4 w-4" />
-	);
-}
-
-function SortableHeader({ field, currentField, direction, onSort, children, className }: SortableHeaderProps) {
-	return (
-		<TableHead
-			className={cn('cursor-pointer select-none hover:bg-muted/50 transition-colors', className)}
-			onClick={() => onSort(field)}
-		>
-			<span className="flex items-center">
-				{children}
-				<SortIcon field={field} currentField={currentField} direction={direction} />
-			</span>
-		</TableHead>
-	);
-}
-
 export function StandingsTable({ data, view = 'aggregate', hasFilters = false }: StandingsTableProps) {
 	const isAverage = view === 'average';
-	const [sortField, setSortField] = useState<SortField>('totalWins');
-	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-	const handleSort = (field: SortField) => {
-		if (sortField === field) {
-			setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-		} else {
-			setSortField(field);
-			// Default to descending for numeric fields, ascending for name
-			setSortDirection(field === 'name' ? 'asc' : 'desc');
+	const compareFn = useCallback((a: OwnerWithStats, b: OwnerWithStats, field: SortField) => {
+		switch (field) {
+			case 'name':
+				return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+			case 'seasonsPlayed':
+				return a.seasonsPlayed - b.seasonsPlayed;
+			case 'totalWins':
+				return a.totalWins - b.totalWins;
+			case 'winPercentage':
+				return a.winPercentage - b.winPercentage;
+			case 'totalPointsFor':
+				return a.totalPointsFor - b.totalPointsFor;
+			case 'totalPointsAgainst':
+				return a.totalPointsAgainst - b.totalPointsAgainst;
+			case 'pointDiff':
+				return a.totalPointsFor - a.totalPointsAgainst - (b.totalPointsFor - b.totalPointsAgainst);
+			case 'championships':
+				return a.championships - b.championships;
+			default:
+				return 0;
 		}
-	};
+	}, []);
 
-	const sortedData = useMemo(() => {
-		return [...data].sort((a, b) => {
-			let aValue: number | string;
-			let bValue: number | string;
-
-			switch (sortField) {
-				case 'name':
-					aValue = a.name.toLowerCase();
-					bValue = b.name.toLowerCase();
-					break;
-				case 'seasonsPlayed':
-					aValue = a.seasonsPlayed;
-					bValue = b.seasonsPlayed;
-					break;
-				case 'totalWins':
-					aValue = a.totalWins;
-					bValue = b.totalWins;
-					break;
-				case 'winPercentage':
-					aValue = a.winPercentage;
-					bValue = b.winPercentage;
-					break;
-				case 'totalPointsFor':
-					aValue = a.totalPointsFor;
-					bValue = b.totalPointsFor;
-					break;
-				case 'totalPointsAgainst':
-					aValue = a.totalPointsAgainst;
-					bValue = b.totalPointsAgainst;
-					break;
-				case 'pointDiff':
-					aValue = a.totalPointsFor - a.totalPointsAgainst;
-					bValue = b.totalPointsFor - b.totalPointsAgainst;
-					break;
-				case 'championships':
-					aValue = a.championships;
-					bValue = b.championships;
-					break;
-				default:
-					return 0;
-			}
-
-			if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-			if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-			return 0;
-		});
-	}, [data, sortField, sortDirection]);
+	const { sortField, sortDirection, handleSort, sortedData } = useTableSort(data, compareFn, {
+		defaultField: 'totalWins' as SortField,
+		textFields: ['name' as SortField],
+	});
 
 	if (data.length === 0) {
 		const message = hasFilters
