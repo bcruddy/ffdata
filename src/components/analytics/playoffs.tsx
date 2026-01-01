@@ -552,7 +552,7 @@ function ClutchView({ ratings }: { ratings: PlayoffsData['clutchRatings'] }) {
 	return (
 		<>
 			<p className="text-sm text-muted-foreground mb-4">
-				Playoff win percentage - every playoff game is an elimination game (2019+)
+				Playoff win percentage - every playoff game is an elimination game
 			</p>
 			<div className="hidden sm:block">
 				<Table>

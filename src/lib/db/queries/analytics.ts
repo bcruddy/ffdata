@@ -1715,8 +1715,55 @@ export async function getClutchRatings(): Promise<ClutchRatingRecord[]> {
         SUM(CASE WHEN is_championship AND score > opp_score THEN 1 ELSE 0 END) as championship_wins
       FROM playoff_games
       GROUP BY owner_id, owner_name
+    ),
+    -- Inferred stats from final_standing (pre-2019)
+    -- 1st: 2 games, 2 wins, 1 champ game, 1 champ win
+    -- 2nd: 2 games, 1 win, 1 champ game, 0 champ wins
+    -- 3rd: 2 games, 1 win, 0 champ games
+    -- 4th: 2 games, 0 wins, 0 champ games
+    inferred_stats AS (
+      SELECT
+        t.owner_id,
+        o.name as owner_name,
+        2 as elimination_games,
+        CASE
+          WHEN t.final_standing = 1 THEN 2
+          WHEN t.final_standing IN (2, 3) THEN 1
+          ELSE 0
+        END as elimination_wins,
+        CASE WHEN t.final_standing <= 2 THEN 1 ELSE 0 END as championship_games,
+        CASE WHEN t.final_standing = 1 THEN 1 ELSE 0 END as championship_wins
+      FROM teams t
+      JOIN seasons s ON t.season_id = s.id
+      JOIN owners o ON t.owner_id = o.id
+      WHERE s.year < 2019
+        AND t.final_standing IS NOT NULL
+        AND t.final_standing <= 4
+    ),
+    inferred_totals AS (
+      SELECT
+        owner_id,
+        owner_name,
+        SUM(elimination_games) as elimination_games,
+        SUM(elimination_wins) as elimination_wins,
+        SUM(championship_games) as championship_games,
+        SUM(championship_wins) as championship_wins
+      FROM inferred_stats
+      GROUP BY owner_id, owner_name
+    ),
+    -- Combine actual and inferred stats
+    combined_stats AS (
+      SELECT
+        COALESCE(es.owner_id, it.owner_id) as owner_id,
+        COALESCE(es.owner_name, it.owner_name) as owner_name,
+        COALESCE(es.elimination_games, 0) + COALESCE(it.elimination_games, 0) as elimination_games,
+        COALESCE(es.elimination_wins, 0) + COALESCE(it.elimination_wins, 0) as elimination_wins,
+        COALESCE(es.championship_games, 0) + COALESCE(it.championship_games, 0) as championship_games,
+        COALESCE(es.championship_wins, 0) + COALESCE(it.championship_wins, 0) as championship_wins
+      FROM elimination_stats es
+      FULL OUTER JOIN inferred_totals it ON es.owner_id = it.owner_id
     )
-    SELECT * FROM elimination_stats
+    SELECT * FROM combined_stats
     WHERE elimination_games > 0
     ORDER BY
       CASE WHEN elimination_games > 0 THEN elimination_wins::float / elimination_games ELSE 0 END DESC,
