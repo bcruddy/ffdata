@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SortableHeader } from '@/components/ui/sortable-header';
+import { useTableSort } from '@/lib/hooks/use-table-sort';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { PlayoffsData } from '@/lib/hooks/use-analytics';
+import type { PlayoffLeaderboardRecord, ClutchRatingRecord } from '@/lib/db/queries/analytics';
 
 type ViewMode = 'leaderboard' | 'records' | 'insights';
 type RecordsSubView = 'blowouts' | 'close' | 'high' | 'low' | 'championships';
@@ -71,7 +74,48 @@ export function Playoffs({ data }: PlayoffsProps) {
 	);
 }
 
+type LeaderboardSortField =
+	| 'ownerName'
+	| 'playoffAppearances'
+	| 'playoffWins'
+	| 'playoffWinPct'
+	| 'championships'
+	| 'championshipAppearances'
+	| 'firstRoundExits'
+	| 'avgPlayoffScore';
+
 function PlayoffLeaderboard({ data }: { data: PlayoffsData }) {
+	const compareFn = useCallback(
+		(a: PlayoffLeaderboardRecord, b: PlayoffLeaderboardRecord, field: LeaderboardSortField) => {
+			switch (field) {
+				case 'ownerName':
+					return a.ownerName.toLowerCase().localeCompare(b.ownerName.toLowerCase());
+				case 'playoffAppearances':
+					return a.playoffAppearances - b.playoffAppearances;
+				case 'playoffWins':
+					return a.playoffWins - b.playoffWins;
+				case 'playoffWinPct':
+					return a.playoffWinPct - b.playoffWinPct;
+				case 'championships':
+					return a.championships - b.championships;
+				case 'championshipAppearances':
+					return a.championshipAppearances - b.championshipAppearances;
+				case 'firstRoundExits':
+					return a.firstRoundExits - b.firstRoundExits;
+				case 'avgPlayoffScore':
+					return a.avgPlayoffScore - b.avgPlayoffScore;
+				default:
+					return 0;
+			}
+		},
+		[],
+	);
+
+	const { sortField, sortDirection, handleSort, sortedData } = useTableSort(data.leaderboard, compareFn, {
+		defaultField: 'playoffWins' as LeaderboardSortField,
+		textFields: ['ownerName' as LeaderboardSortField],
+	});
+
 	return (
 		<Card>
 			<CardHeader>
@@ -84,29 +128,83 @@ function PlayoffLeaderboard({ data }: { data: PlayoffsData }) {
 						<TableHeader>
 							<TableRow>
 								<TableHead className="w-12 text-center">#</TableHead>
-								<TableHead>Owner</TableHead>
-								<TableHead className="text-center">Apps</TableHead>
-								<TableHead className="text-center">Record</TableHead>
-								<TableHead className="text-center">Win %</TableHead>
-								<TableHead className="text-center">Titles</TableHead>
-								<TableHead className="hidden text-center md:table-cell">Finals</TableHead>
-								<TableHead className="hidden text-center lg:table-cell">1st Rd Exits</TableHead>
-								<TableHead className="hidden text-center lg:table-cell">Avg Score</TableHead>
+								<SortableHeader
+									field="ownerName"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+								>
+									Owner
+								</SortableHeader>
+								<SortableHeader
+									field="playoffAppearances"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="text-center"
+								>
+									Apps
+								</SortableHeader>
+								<SortableHeader
+									field="playoffWins"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="text-center"
+								>
+									Record
+								</SortableHeader>
+								<SortableHeader
+									field="playoffWinPct"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="text-center"
+								>
+									Win %
+								</SortableHeader>
+								<SortableHeader
+									field="championships"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="text-center"
+								>
+									Titles
+								</SortableHeader>
+								<SortableHeader
+									field="championshipAppearances"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="hidden text-center md:table-cell"
+								>
+									Finals
+								</SortableHeader>
+								<SortableHeader
+									field="firstRoundExits"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="hidden text-center lg:table-cell"
+								>
+									1st Rd Exits
+								</SortableHeader>
+								<SortableHeader
+									field="avgPlayoffScore"
+									currentField={sortField}
+									direction={sortDirection}
+									onSort={handleSort}
+									className="hidden text-center lg:table-cell"
+								>
+									Avg Score
+								</SortableHeader>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{data.leaderboard.map((owner, index) => (
+							{sortedData.map((owner, index) => (
 								<TableRow key={owner.ownerId}>
-									<TableCell className="text-muted-foreground text-center font-medium">
-										{index + 1}
-										{index < 3 && (
-											<span className="ml-1">
-												{index === 0 && '🥇'}
-												{index === 1 && '🥈'}
-												{index === 2 && '🥉'}
-											</span>
-										)}
-									</TableCell>
+									<TableCell className="text-muted-foreground text-center font-medium">{index + 1}</TableCell>
 									<TableCell className="font-medium">{owner.ownerName}</TableCell>
 									<TableCell className="text-center font-mono">{owner.playoffAppearances}</TableCell>
 									<TableCell className="text-center font-mono">
@@ -138,18 +236,11 @@ function PlayoffLeaderboard({ data }: { data: PlayoffsData }) {
 				</div>
 
 				<div className="sm:hidden space-y-3">
-					{data.leaderboard.map((owner, index) => (
+					{sortedData.map((owner, index) => (
 						<div key={owner.ownerId} className="bg-muted/50 rounded-lg p-3 space-y-2">
 							<div className="flex justify-between items-center">
 								<span className="font-medium">
 									#{index + 1} {owner.ownerName}
-									{index < 3 && (
-										<span className="ml-1">
-											{index === 0 && '🥇'}
-											{index === 1 && '🥈'}
-											{index === 2 && '🥉'}
-										</span>
-									)}
 								</span>
 								{owner.championships > 0 && <span className="font-bold text-yellow-500">{owner.championships} 🏆</span>}
 							</div>
@@ -544,7 +635,27 @@ function PlayoffInsights({
 	);
 }
 
+type ClutchSortField = 'ownerName' | 'eliminationWins' | 'clutchWinPct';
+
 function ClutchView({ ratings }: { ratings: PlayoffsData['clutchRatings'] }) {
+	const compareFn = useCallback((a: ClutchRatingRecord, b: ClutchRatingRecord, field: ClutchSortField) => {
+		switch (field) {
+			case 'ownerName':
+				return a.ownerName.toLowerCase().localeCompare(b.ownerName.toLowerCase());
+			case 'eliminationWins':
+				return a.eliminationWins - b.eliminationWins;
+			case 'clutchWinPct':
+				return a.clutchWinPct - b.clutchWinPct;
+			default:
+				return 0;
+		}
+	}, []);
+
+	const { sortField, sortDirection, handleSort, sortedData } = useTableSort(ratings, compareFn, {
+		defaultField: 'clutchWinPct' as ClutchSortField,
+		textFields: ['ownerName' as ClutchSortField],
+	});
+
 	if (ratings.length === 0) {
 		return <p className="text-muted-foreground py-4 text-center">No clutch rating data available.</p>;
 	}
@@ -559,24 +670,33 @@ function ClutchView({ ratings }: { ratings: PlayoffsData['clutchRatings'] }) {
 					<TableHeader>
 						<TableRow>
 							<TableHead className="w-12 text-center">#</TableHead>
-							<TableHead>Owner</TableHead>
-							<TableHead className="text-center">Playoff Record</TableHead>
-							<TableHead className="text-center">Win %</TableHead>
+							<SortableHeader field="ownerName" currentField={sortField} direction={sortDirection} onSort={handleSort}>
+								Owner
+							</SortableHeader>
+							<SortableHeader
+								field="eliminationWins"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Playoff Record
+							</SortableHeader>
+							<SortableHeader
+								field="clutchWinPct"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Win %
+							</SortableHeader>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{ratings.map((rating, index) => (
+						{sortedData.map((rating, index) => (
 							<TableRow key={rating.ownerId}>
-								<TableCell className="text-muted-foreground text-center font-medium">
-									{index + 1}
-									{index < 3 && (
-										<span className="ml-1">
-											{index === 0 && '🥇'}
-											{index === 1 && '🥈'}
-											{index === 2 && '🥉'}
-										</span>
-									)}
-								</TableCell>
+								<TableCell className="text-muted-foreground text-center font-medium">{index + 1}</TableCell>
 								<TableCell className="font-medium">{rating.ownerName}</TableCell>
 								<TableCell className="text-center font-mono">
 									<span className="text-green-500">{rating.eliminationWins}</span>
@@ -593,7 +713,7 @@ function ClutchView({ ratings }: { ratings: PlayoffsData['clutchRatings'] }) {
 			</div>
 
 			<div className="sm:hidden space-y-3">
-				{ratings.map((rating, index) => (
+				{sortedData.map((rating, index) => (
 					<div key={rating.ownerId} className="bg-muted/50 rounded-lg p-3 space-y-2">
 						<div className="flex justify-between items-center">
 							<span className="font-medium">

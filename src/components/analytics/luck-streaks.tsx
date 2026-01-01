@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SortableHeader } from '@/components/ui/sortable-header';
+import { useTableSort } from '@/lib/hooks/use-table-sort';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { LuckRecord, StreakRecord } from '@/lib/db/queries/analytics';
@@ -55,7 +57,31 @@ export function LuckStreaks({ luckRecords, streakRecords }: LuckStreaksProps) {
 	);
 }
 
+type LuckSortField = 'ownerName' | 'totalWins' | 'luckyWins' | 'unluckyLosses' | 'netLuck';
+
 function LuckAnalysis({ records }: { records: LuckRecord[] }) {
+	const compareFn = useCallback((a: LuckRecord, b: LuckRecord, field: LuckSortField) => {
+		switch (field) {
+			case 'ownerName':
+				return a.ownerName.toLowerCase().localeCompare(b.ownerName.toLowerCase());
+			case 'totalWins':
+				return a.totalWins - b.totalWins;
+			case 'luckyWins':
+				return a.luckyWins - b.luckyWins;
+			case 'unluckyLosses':
+				return a.unluckyLosses - b.unluckyLosses;
+			case 'netLuck':
+				return a.netLuck - b.netLuck;
+			default:
+				return 0;
+		}
+	}, []);
+
+	const { sortField, sortDirection, handleSort, sortedData } = useTableSort(records, compareFn, {
+		defaultField: 'netLuck' as LuckSortField,
+		textFields: ['ownerName' as LuckSortField],
+	});
+
 	return (
 		<Card>
 			<CardHeader>
@@ -70,15 +96,49 @@ function LuckAnalysis({ records }: { records: LuckRecord[] }) {
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Owner</TableHead>
-							<TableHead className="text-center">Record</TableHead>
-							<TableHead className="text-center">Lucky Wins</TableHead>
-							<TableHead className="text-center">Unlucky Losses</TableHead>
-							<TableHead className="text-center">Net Luck</TableHead>
+							<SortableHeader field="ownerName" currentField={sortField} direction={sortDirection} onSort={handleSort}>
+								Owner
+							</SortableHeader>
+							<SortableHeader
+								field="totalWins"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Record
+							</SortableHeader>
+							<SortableHeader
+								field="luckyWins"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Lucky Wins
+							</SortableHeader>
+							<SortableHeader
+								field="unluckyLosses"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Unlucky Losses
+							</SortableHeader>
+							<SortableHeader
+								field="netLuck"
+								currentField={sortField}
+								direction={sortDirection}
+								onSort={handleSort}
+								className="text-center"
+							>
+								Net Luck
+							</SortableHeader>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{records.map((record) => (
+						{sortedData.map((record) => (
 							<TableRow key={record.ownerId}>
 								<TableCell className="font-medium">{record.ownerName}</TableCell>
 								<TableCell className="text-center font-mono">
