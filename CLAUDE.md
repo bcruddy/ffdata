@@ -28,13 +28,14 @@ FF Data is a Next.js 16.1 app for visualizing ESPN fantasy football historical d
 ### Key Directories
 
 - `src/app/` - Next.js App Router pages
+- `src/app/(dashboard)/` - Protected route group (requires auth)
 - `src/app/api/analytics/` - Analytics API routes
 - `src/components/ui/` - shadcn components (don't modify)
 - `src/components/layout/` - App layout components (header, footer)
 - `src/components/analytics/` - Analytics feature components
 - `src/components/standings/` - Standings page components
 - `src/lib/db/` - Database client and queries
-- `src/lib/hooks/` - TanStack Query hooks
+- `src/lib/hooks/` - TanStack Query and utility hooks
 - `src/lib/espn/` - ESPN API service (stub)
 - `src/schemas/` - Zod validation schemas
 - `src/types/` - TypeScript types
@@ -100,15 +101,51 @@ FF Data is a Next.js 16.1 app for visualizing ESPN fantasy football historical d
 - Snake_case in database, camelCase in TypeScript
 - Always use parameterized queries
 
+## Patterns
+
+### Sortable Tables
+
+Use `SortableHeader` and `useTableSort` for sortable table columns:
+
+- `src/components/ui/sortable-header.tsx` - Clickable header with sort indicators
+- `src/lib/hooks/use-table-sort.ts` - Generic sorting hook
+
+```tsx
+const { sortField, sortDirection, handleSort, sortedData } = useTableSort(
+	data,
+	(a, b, field) => {
+		switch (field) {
+			case 'name':
+				return a.name.localeCompare(b.name);
+			case 'wins':
+				return a.wins - b.wins;
+			default:
+				return 0;
+		}
+	},
+	{ defaultField: 'wins', textFields: ['name'] },
+);
+```
+
+### TanStack Query Conventions
+
+- Query keys: Use `analyticsKeys` factory in `src/lib/hooks/use-analytics.ts`
+- Stale time: 30 minutes (`STALE_TIME = 30 * 60 * 1000`)
+- GC time: 60 minutes (`GC_TIME = 60 * 60 * 1000`)
+- Hooks live in `src/lib/hooks/`
+
 ## Commands
 
 ```bash
-pnpm dev              # Start dev server
-pnpm build            # Production build
-pnpm lint             # Run ESLint
-pnpm format           # Format with Prettier
-pnpm db:migrate       # Run migrations
-pnpm db:migrate:down  # Rollback migration
+pnpm dev                # Start dev server
+pnpm build              # Production build
+pnpm start              # Start production server
+pnpm lint               # Run ESLint
+pnpm format             # Format with Prettier
+pnpm format:check       # Check formatting
+pnpm db:migrate         # Run migrations
+pnpm db:migrate:down    # Rollback migration
+pnpm db:migrate:create  # Create new migration
 ```
 
 ## ESPN Integration (Future)
