@@ -1,6 +1,24 @@
 # FF Data - Fantasy Football Analytics
 
-Visualize and analyze historical ESPN fantasy football data.
+Visualize and analyze historical ESPN fantasy football data for our league. See who's dominated over the years, track your head-to-head record against rivals, and settle debates with actual stats.
+
+## Quick Start
+
+```bash
+# Install dependencies
+pnpm install
+
+# Set up environment variables (see Environment Variables section below)
+cp .env.example .env
+
+# Run database migrations
+pnpm db:migrate
+
+# Start the development server
+pnpm dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000) and sign in.
 
 ## Features
 
